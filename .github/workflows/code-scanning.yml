@@ -1,0 +1,142 @@
+name: 'Code Scanning'
+
+on:
+  push:
+    branches: ['main', 'develop']
+  pull_request:
+    branches: ['main', 'develop']
+  schedule:
+    # Runs every Monday at 15 UTC
+    - cron: '30 15 * * 1'
+
+jobs:
+  codeql-analysis:
+    name: 'CodeQL Analysis'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript']
+
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v5
+
+      - name: 'Initialize CodeQL'
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: 'Autobuild'
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 'Perform CodeQL Analysis'
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{matrix.language}}'
+
+  # Security linting check
+  security-lint:
+    name: 'Security Linting Check'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v5
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 'Install dependencies'
+        run: npm ci
+
+      - name: 'Run security linting'
+        run: npm run lint
+
+  # Dependency vulnerability scanning
+  dependency-check:
+    name: 'Dependency Vulnerability Check'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v5
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 'Install dependencies'
+        run: npm ci
+
+      - name: 'Run npm audit'
+        run: npm audit --audit-level=moderate --json > audit-results.json || true
+
+      - name: 'Upload audit results'
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-results
+          path: audit-results.json
+
+  # Secret scanning check
+  secret-scanning:
+    name: 'Secret Scanning Check'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: 'Run gitleaks'
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: 'Upload Secret Scanning Results'
+        if: always() && hashFiles('results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+      - name: 'Check for secrets detected'
+        if: always()
+        run: |
+          if [ -f results.sarif ]; then
+            # Check if any secrets were found in the SARIF file
+            secrets_count=$(jq '.runs[0].results | length' results.sarif 2>/dev/null || echo "0")
+            if [ "$secrets_count" -gt 0 ]; then
+              echo "❌ Secrets detected! Found $secrets_count potential secrets."
+              echo "Please review the security findings and remove any real secrets."
+              exit 1
+            else
+              echo "✅ No secrets detected."
+            fi
+          else
+            echo "⚠️ No SARIF file generated - this might indicate a configuration issue."
+          fi

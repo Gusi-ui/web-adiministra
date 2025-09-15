@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Ejecutando validaciones de código..."
+
+# Verificar que no hay errores de linting
+echo "📋 Verificando ESLint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Error: ESLint encontró errores. Commit cancelado."
+  exit 1
+fi
+
+# Verificar tipos de TypeScript
+echo "🔧 Verificando tipos de TypeScript..."
+npm run type-check
+if [ $? -ne 0 ]; then
+  echo "❌ Error: TypeScript encontró errores. Commit cancelado."
+  exit 1
+fi
+
+# Verificar formato de código
+echo "🎨 Verificando formato de código..."
+npm run format:check
+if [ $? -ne 0 ]; then
+  echo "❌ Error: Código no está formateado correctamente. Ejecuta 'npm run format' y vuelve a intentar."
+  exit 1
+fi
+
+# Verificar que el build funciona
+echo "🏗️ Verificando que el build funciona..."
+npm run build
+if [ $? -ne 0 ]; then
+  echo "❌ Error: El build falló. Commit cancelado."
+  exit 1
+fi
+
+echo "✅ Todas las validaciones pasaron. Commit permitido."

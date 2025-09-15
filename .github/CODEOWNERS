@@ -1,0 +1,20 @@
+# Global owners
+* @Gusi-ui
+
+# Frontend code
+/src/ @Gusi-ui
+/package.json @Gusi-ui
+/tsconfig.json @Gusi-ui
+/.eslintrc.json @Gusi-ui
+/.prettierrc @Gusi-ui
+
+# Configuration files
+/.github/ @Gusi-ui
+/.husky/ @Gusi-ui
+/next.config.js @Gusi-ui
+/tailwind.config.js @Gusi-ui
+/postcss.config.js @Gusi-ui
+
+# Environment files
+/.env* @Gusi-ui
+/env.example @Gusi-ui

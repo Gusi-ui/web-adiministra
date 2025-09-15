@@ -1,0 +1,79 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Excluir node_modules de todas las carpetas para secret scanning
+**/node_modules/
+mobile-app/node_modules/
+apps/worker-mobile/node_modules/
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# mobile app builds
+*.apk
+*.aab
+*.ipa
+
+# keystore files
+*.keystore
+*.jks
+keystore_base64.txt
+
+# mobile app specific
+mobile-app/android/app/release/
+mobile-app/ios/build/
+
+# Android build directories
+mobile-app/android/.gradle/
+mobile-app/android/app/build/
+mobile-app/android/build/
+
+# Android JDK downloads
+mobile-app/android/*.jdk.zip
+
+# React Native build artifacts
+mobile-app/node_modules/**/android/build/
+mobile-app/node_modules/**/android/.cxx/
+mobile-app/node_modules/**/.gradle/
+
+# Expo build artifacts
+.expo/
+
+# Local properties
+mobile-app/android/local.properties

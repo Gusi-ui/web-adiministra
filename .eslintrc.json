@@ -1,0 +1,36 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    // Reglas estrictas de TypeScript
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-non-null-assertion": "error",
+    "@typescript-eslint/no-var-requires": "error",
+
+    // Reglas estrictas de React
+    "react-hooks/exhaustive-deps": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react/no-unescaped-entities": "error",
+    "react/jsx-key": "error",
+
+    // Reglas estrictas de JavaScript
+    "no-console": "warn",
+    "no-debugger": "error",
+    "no-alert": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-unused-vars": "off",
+
+    // Reglas de Next.js
+    "@next/next/no-img-element": "error",
+    "@next/next/no-html-link-for-pages": "error"
+  },
+  "overrides": [
+    {
+      "files": ["*.js", "*.jsx"],
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off"
+      }
+    }
+  ]
+}
