@@ -36,6 +36,7 @@ jobs:
         run: npm run build
 
       - name: Deploy to Vercel
+        # Required secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
         if: github.ref == 'refs/heads/main'
         uses: amondnet/vercel-action@v25
         with:
@@ -45,6 +46,7 @@ jobs:
           vercel-args: '--prod'
 
       - name: Deploy to Vercel (Preview)
+        # Required secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
         if: github.ref == 'refs/heads/develop'
         uses: amondnet/vercel-action@v25
         with:
