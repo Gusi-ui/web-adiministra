@@ -18,7 +18,7 @@
     "validate-holidays": "tsx scripts/validate-holidays.ts",
     "test-holidays": "tsx scripts/validate-holidays.ts 2025 validate",
     "prepare": "husky",
-    "db:types": "supabase gen types typescript --project-id mfvifwfmvhbztprakeaj > src/types/supabase.ts",
+    "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/supabase.ts",
     "db:types:watch": "nodemon --watch src --exec 'npm run db:types'",
     "db:pull": "supabase db pull",
     "db:push": "supabase db push",
