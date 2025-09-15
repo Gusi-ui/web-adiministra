@@ -21,15 +21,18 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyDww_H65hY2M-ybNSCE5gYKEEZwXlTFkRI
 Después de crear el proyecto en Vercel, necesitarás estos secrets en GitHub:
 
 ### 1. VERCEL_TOKEN
+
 - Ve a Vercel Dashboard > Settings > Tokens
 - Crea un nuevo token con nombre "GitHub Actions"
 - Copia el token
 
 ### 2. VERCEL_ORG_ID
+
 - Ve a Vercel Dashboard > Settings > General
 - Copia el "Team ID" o "Personal Account ID"
 
 ### 3. VERCEL_PROJECT_ID
+
 - Ve al proyecto `sad-las-web` en Vercel
 - En la URL o en Settings > General
 - Copia el Project ID
