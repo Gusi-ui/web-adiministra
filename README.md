@@ -142,3 +142,5 @@ Este proyecto es privado y confidencial.
 **Desarrollado con ❤️ por Gusi**
 
 # Test commit para verificar secrets
+
+# Test: Verificar que los secrets funcionan
