@@ -95,7 +95,7 @@ jobs:
       - name: Deploy to Vercel (Preview)
         uses: amondnet/vercel-action@v25
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN || 'placeholder-token' }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID || 'placeholder-org' }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID || 'placeholder-project' }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'

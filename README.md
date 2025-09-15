@@ -2,6 +2,17 @@
 
 Sistema de gestión de horas y asignaciones para trabajadores de servicios asistenciales domiciliarios (SAD).
 
+## 🚀 Deployment
+
+Esta aplicación está desplegada en Vercel:
+- **URL de Producción**: [sad-las-web.vercel.app](https://sad-las-web.vercel.app)
+- **Repositorio**: [web-adiministra](https://github.com/Gusi-ui/web-adiministra.git)
+
+## 📱 Proyectos Relacionados
+
+- **Aplicación Web**: Este repositorio (Dashboard + API)
+- **Aplicación Móvil**: [sad-las-mobile](https://github.com/Gusi-ui/sad-las-mobile.git)
+
 ## 🚀 Características
 
 - ✅ **Dashboard administrativo** completo
