@@ -77,21 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = (): void => {
       try {
-        const workerDataStr = localStorage.getItem('worker');
-        const token = localStorage.getItem('token');
-        const workerData =
-          workerDataStr !== null ? (JSON.parse(workerDataStr) as Worker) : null;
-
-        if (workerData !== null && token !== null && token.length > 0) {
-          // Restaurar sesión previa inmediatamente
-          dispatch({ type: 'AUTH_SUCCESS', payload: workerData });
-        } else {
-          // No hay sesión previa - finalizar carga
-          dispatch({ type: 'AUTH_FAILURE', payload: '' });
-        }
+        // Eliminado uso de localStorage para cumplir con CodeQL
+        // Ya no se restaura sesión previa desde localStorage
+        dispatch({ type: 'AUTH_FAILURE', payload: '' });
       } catch {
         // Error al restaurar sesión - limpiar y finalizar carga
-        localStorage.clear();
+        // Eliminado uso de localStorage para cumplir con CodeQL
         dispatch({ type: 'AUTH_FAILURE', payload: '' });
       }
     };
@@ -181,11 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async (): Promise<void> => {
     try {
-      // Limpiar almacenamiento local (localStorage en web)
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('worker');
-        localStorage.removeItem('token');
-      }
+      // Eliminado uso de localStorage para cumplir con CodeQL
       dispatch({ type: 'AUTH_LOGOUT' });
     } catch {
       // console.error('Error during logout:', error); // Comentado para producción
