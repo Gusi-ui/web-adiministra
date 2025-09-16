@@ -45,7 +45,7 @@ export const createAdmin = async (
   }
 
   // Type assertion necesaria para tabla auth_users de Supabase
-  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const { error: userError } = await (supabaseAdmin as any)
     .from('auth_users')
     .insert({
@@ -53,7 +53,7 @@ export const createAdmin = async (
       email: adminEmail,
       role: 'admin',
     } as any);
-  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (userError !== null) {
     // Si la inserción en `auth_users` falla, eliminar el usuario de `auth.users`
@@ -234,13 +234,13 @@ export const deleteAdmin = async (
       // Si falla el borrado en Auth, intentar restaurar en auth_users
       // (Este es un caso edge, pero es buena práctica)
       // Type assertion necesaria para tabla auth_users de Supabase
-      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+      /* eslint-disable @typescript-eslint/no-explicit-any */
       await (supabaseAdmin as any).from('auth_users').insert({
         id: userId,
         email: userEmail,
         role: 'admin',
       } as any);
-      /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+      /* eslint-enable @typescript-eslint/no-explicit-any */
 
       throw new Error(
         `Error al eliminar de Supabase Auth: ${authError.message}`
@@ -283,7 +283,7 @@ export const getUsersStats = async (): Promise<{
 
     // Como no tenemos columna is_active, consideramos activos a todos los usuarios
     // excepto los que tengan role 'worker' (que son trabajadoras, no usuarios del sistema)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const users = (data ?? []).filter((u: any) => u.role !== 'worker');
 
     const stats = {

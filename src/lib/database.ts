@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 import { createClient } from '@supabase/supabase-js';
 
 import type {
@@ -20,14 +19,31 @@ import { securityLogger } from '@/utils/security-config';
 const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '';
 const supabaseKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ?? '';
 
+// Función para crear cliente de Supabase con validación
+const createSupabaseClient = () => {
+  if (!supabaseUrl || !supabaseKey) {
+    // Durante el build, las variables de entorno pueden no estar disponibles
+    // Crear un cliente mock para evitar errores
+    return createClient('https://placeholder.supabase.co', 'placeholder-key', {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    });
+  }
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true, // Importante para tokens de recuperación
+    },
+  });
+};
+
 // Configurar cliente de Supabase con manejo de auth
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true, // Importante para tokens de recuperación
-  },
-});
+export const supabase = createSupabaseClient();
 
 // Re-exportar tipos para compatibilidad
 export type {

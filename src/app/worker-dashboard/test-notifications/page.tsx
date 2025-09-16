@@ -102,11 +102,11 @@ export default function TestNotificationsPage() {
       }
 
       // Type assertion necesaria para Supabase - servicio dinámicamente cargado
-      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-type-assertion */
+      /* eslint-disable @typescript-eslint/no-explicit-any */
       const result = await (
         tester.notificationService as any
       ).createAndSendNotification(user.id, notification);
-      /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unnecessary-type-assertion */
+      /* eslint-enable @typescript-eslint/no-explicit-any */
 
       const success = result !== null && result !== undefined;
       setTestResults(prev => ({ ...prev, [type]: success }));

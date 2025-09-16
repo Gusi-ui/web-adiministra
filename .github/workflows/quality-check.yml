@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -33,12 +33,52 @@ jobs:
         run: npm run format:check
 
       - name: Create environment file for build
-        # Required secrets: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GOOGLE_MAPS_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
         run: |
-          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}" >> .env.local
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key' }}" >> .env.local
-          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key' }}" >> .env.local
-          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'placeholder-maps-key' }}" >> .env.local
+          echo "🔧 Configurando variables de entorno para build..."
+
+          # Usar valores de secrets o placeholders para desarrollo
+          SUPABASE_URL_VALUE="${SUPABASE_URL:-https://placeholder.supabase.co}"
+          SUPABASE_ANON_KEY_VALUE="${SUPABASE_ANON_KEY:-placeholder-key}"
+          SUPABASE_SERVICE_KEY_VALUE="${SUPABASE_SERVICE_KEY:-placeholder-service-key}"
+          GOOGLE_MAPS_KEY_VALUE="${GOOGLE_MAPS_KEY:-placeholder-maps-key}"
+
+          # Mostrar estado de configuración
+          if [ "$SUPABASE_URL" = "" ]; then
+            echo "⚠️ Warning: NEXT_PUBLIC_SUPABASE_URL secret not configured, using placeholder"
+          else
+            echo "✅ NEXT_PUBLIC_SUPABASE_URL configured"
+          fi
+
+          if [ "$SUPABASE_ANON_KEY" = "" ]; then
+            echo "⚠️ Warning: NEXT_PUBLIC_SUPABASE_ANON_KEY secret not configured, using placeholder"
+          else
+            echo "✅ NEXT_PUBLIC_SUPABASE_ANON_KEY configured"
+          fi
+
+          if [ "$SUPABASE_SERVICE_KEY" = "" ]; then
+            echo "⚠️ Warning: SUPABASE_SERVICE_ROLE_KEY secret not configured, using placeholder"
+          else
+            echo "✅ SUPABASE_SERVICE_ROLE_KEY configured"
+          fi
+
+          if [ "$GOOGLE_MAPS_KEY" = "" ]; then
+            echo "⚠️ Warning: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY secret not configured, using placeholder"
+          else
+            echo "✅ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY configured"
+          fi
+
+          # Crear archivo .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL_VALUE" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY_VALUE" >> .env.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_KEY_VALUE" >> .env.local
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_KEY_VALUE" >> .env.local
+
+          echo "✅ Archivo .env.local creado exitosamente"
 
       - name: Run build
         run: npm run build

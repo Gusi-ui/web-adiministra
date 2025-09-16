@@ -78,7 +78,7 @@ export const logActivity = async (
     if (activity.user_agent != null) params.p_user_agent = activity.user_agent;
 
     // Usar solo la función RPC (más confiable)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     const { data, error } = await supabase.rpc('log_system_activity', params);
 
     if (error !== null) {

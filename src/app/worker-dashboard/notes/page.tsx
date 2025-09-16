@@ -147,7 +147,6 @@ const NoteEditor = ({
       <div className='p-4 border-t border-gray-200 bg-gray-50 flex space-x-3'>
         <Button
           onClick={(): void => {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             handleSave();
           }}
           disabled={content.trim() === ''}
@@ -237,7 +236,6 @@ export default function NotesPage(): React.JSX.Element {
       }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     load();
   }, [currentUser?.email]);
 

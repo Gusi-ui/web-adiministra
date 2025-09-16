@@ -4,10 +4,20 @@ import fetch from 'node-fetch';
 
 import { type NextRequest, NextResponse } from 'next/server';
 
-const supabase = createClient(
-  process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '',
-  process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? ''
-);
+// Crear cliente de Supabase con validación para evitar errores durante el build
+const createSupabaseClient = () => {
+  const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '';
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? '';
+
+  if (!supabaseUrl || !supabaseKey) {
+    // Durante el build, usar valores placeholder para evitar errores
+    return createClient('https://placeholder.supabase.co', 'placeholder-key');
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
+};
+
+const supabase = createSupabaseClient();
 
 interface HolidayData {
   day: number;

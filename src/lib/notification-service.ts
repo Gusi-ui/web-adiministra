@@ -34,7 +34,7 @@ export class NotificationService {
       );
 
       // Crear notificación en la base de datos
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       const { data: createdNotification, error } = await supabase
         .from('worker_notifications')
         .insert({
@@ -65,7 +65,6 @@ export class NotificationService {
       // eslint-disable-next-line no-console
       console.log('🚀 Notificación enviada completamente');
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return createdNotification;
     } catch (error) {
       // eslint-disable-next-line no-console
