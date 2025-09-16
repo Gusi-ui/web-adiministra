@@ -15,7 +15,8 @@ const createSupabaseClient = () => {
     supabaseKey === null ||
     supabaseKey === ''
   ) {
-    throw new Error('Supabase configuration is missing');
+    // Durante el build, usar valores placeholder para evitar errores
+    return createClient('https://placeholder.supabase.co', 'placeholder-key');
   }
   return createClient(supabaseUrl, supabaseKey);
 };

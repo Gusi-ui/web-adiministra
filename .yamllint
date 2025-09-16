@@ -1,0 +1,43 @@
+extends: default
+
+rules:
+  # Permitir líneas largas en workflows de GitHub Actions
+  line-length:
+    max: 120
+    level: warning
+  
+  # Permitir comentarios en cualquier lugar
+  comments:
+    min-spaces-from-content: 1
+  
+  # Permitir indentación de 2 espacios
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+  
+  # Permitir documentación al inicio
+  document-start:
+    present: false
+  
+  # Permitir saltos de línea al final
+  new-line-at-end-of-file:
+    level: warning
+  
+  # Permitir comillas dobles
+  quoted-strings:
+    quote-type: any
+    check-keys: false
+  
+  # Permitir valores booleanos en diferentes formatos
+  truthy:
+    allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
+    check-keys: false
+  
+  # Permitir anclas y alias
+  anchors:
+    max-length: 128
+  
+  # Permitir llaves duplicadas en contextos específicos
+  key-duplicates:
+    level: warning

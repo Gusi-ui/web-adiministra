@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { logger } from '@/utils/logger';
 
 import { supabase } from './database';

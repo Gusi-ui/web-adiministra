@@ -34,7 +34,7 @@ export const ensureWorkerAuthAccount = async (
   }
 
   // Estrategia robusta: buscar por email; si existe, actualizar; si no, crear
-  // eslint-disable-next-line no-useless-assignment
+
   let authUserId: string | null = null;
 
   // Buscar por email (primera página)

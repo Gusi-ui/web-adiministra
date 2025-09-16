@@ -110,7 +110,7 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
         setLoading(false);
       }
     };
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     load();
   }, [params?.id, currentUser?.email]);
 
@@ -149,7 +149,6 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
       }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     checkCompletionStatus();
   }, [row?.id, currentUser?.id]);
 
@@ -182,7 +181,7 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
       );
       setUseHolidayDay(isWeekend || holiday);
     };
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     check();
   }, []);
 
@@ -918,7 +917,6 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
                 ) : (
                   <Button
                     onClick={() => {
-                      // eslint-disable-next-line @typescript-eslint/no-floating-promises
                       handleCompleteService();
                     }}
                     disabled={isCompleting}

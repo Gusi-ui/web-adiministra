@@ -28,7 +28,6 @@ type Worker = WorkerType;
 const isValidField = (field: unknown): field is string =>
   typeof field === 'string' && field.length > 0;
 
-/* eslint-disable react/jsx-closing-tag-location */
 export default function WorkersPage() {
   const { user } = useAuth();
   const currentUser = user;
@@ -1932,7 +1931,7 @@ export default function WorkersPage() {
                     setError('La contraseña debe tener al menos 6 caracteres.');
                     return;
                   }
-                  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
                   (async () => {
                     try {
                       const resp = await fetch('/api/workers/auth', {

@@ -182,7 +182,7 @@ export default function WorkerBalancesPage(): React.JSX.Element {
         setLoading(false);
       }
     };
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     load();
   }, [currentUser?.email, currentYear, currentMonth]);
 

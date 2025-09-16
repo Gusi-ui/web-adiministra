@@ -357,45 +357,45 @@ export default class NotificationTester {
 // Funciones globales para testing desde la consola del navegador
 // Solo inicializar si no existen ya para evitar problemas de hidratación
 if (typeof window !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window as any).testNotifications === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).testNotifications = async () => {
       const tester = new NotificationTester();
       await tester.runFullTest();
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window as any).testSounds === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).testSounds = () => {
       const tester = new NotificationTester();
       return tester.testNotificationSounds();
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window as any).testSoundMaxVolume === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).testSoundMaxVolume = async () => {
       const tester = new NotificationTester();
       await tester.testLongSound();
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window as any).testLoudSound === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).testLoudSound = async () => {
       const tester = new NotificationTester();
       await tester.testLoudSound();
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window as any).testSimpleAudio === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).testSimpleAudio = async () => {
       const tester = new NotificationTester();
       await tester.testSimpleAudio();

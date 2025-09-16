@@ -115,11 +115,11 @@ export async function POST(
       process.env['SUPABASE_SERVICE_ROLE_KEY']?.length
     );
 
-    const { data: notification, error } = (await supabase
+    const { data: notification, error } = await supabase
       .from('worker_notifications')
       .insert(notificationData)
       .select()
-      .single()) as { data: Record<string, unknown> | null; error: unknown };
+      .single();
 
     if (error !== null) {
       // eslint-disable-next-line no-console

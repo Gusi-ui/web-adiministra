@@ -120,7 +120,7 @@ export default function BalancesPage() {
         setFilteredWorkers(wlist);
       }
     };
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     load();
   }, []);
 

@@ -1,0 +1,111 @@
+name: Workflow Health Check
+
+on:
+  schedule:
+    # Ejecutar cada lunes a las 9:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Permitir ejecución manual
+
+jobs:
+  health-check:
+    name: Workflow Health Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate workflows
+        run: npm run validate-workflows
+
+      - name: Check workflow files syntax
+        run: |
+          echo "🔍 Verificando sintaxis de archivos YAML..."
+          for file in .github/workflows/*.yml; do
+            echo "Validando $file..."
+            python3 -c "import yaml; yaml.safe_load(open('$file'))" || {
+              echo "❌ Error de sintaxis en $file"
+              exit 1
+            }
+            echo "✅ $file - OK"
+          done
+
+      - name: Check for outdated actions
+        run: |
+          echo "🔍 Verificando versiones de actions..."
+          outdated_actions=()
+
+          # Verificar checkout
+          if grep -r "actions/checkout@v[0-4]" .github/workflows/; then
+            outdated_actions+=("actions/checkout")
+          fi
+
+          # Verificar setup-node
+          if grep -r "actions/setup-node@v[0-4]" .github/workflows/; then
+            outdated_actions+=("actions/setup-node")
+          fi
+
+          if [ ${#outdated_actions[@]} -gt 0 ]; then
+            echo "⚠️ Actions desactualizadas encontradas:"
+            printf '%s\n' "${outdated_actions[@]}"
+            echo "Considera actualizar a las versiones más recientes"
+          else
+            echo "✅ Todas las actions están actualizadas"
+          fi
+
+      - name: Check secrets configuration
+        run: |
+          echo "🔍 Verificando configuración de secrets..."
+          required_secrets=(
+            "NEXT_PUBLIC_SUPABASE_URL"
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+            "SUPABASE_SERVICE_ROLE_KEY"
+            "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"
+          )
+
+          missing_secrets=()
+          for secret in "${required_secrets[@]}"; do
+            if [ -z "${!secret}" ]; then
+              missing_secrets+=("$secret")
+            fi
+          done
+
+          if [ ${#missing_secrets[@]} -gt 0 ]; then
+            echo "⚠️ Secrets faltantes (esto es normal en el contexto de GitHub Actions):"
+            printf '%s\n' "${missing_secrets[@]}"
+            echo "Asegúrate de que estos secrets estén configurados en GitHub"
+          else
+            echo "✅ Todos los secrets están configurados"
+          fi
+
+      - name: Generate health report
+        run: |
+          echo "# 📊 Workflow Health Report" > health-report.md
+          echo "**Fecha:** $(date)" >> health-report.md
+          echo "**Commit:** ${{ github.sha }}" >> health-report.md
+          echo "" >> health-report.md
+          echo "## ✅ Checks realizados:" >> health-report.md
+          echo "- [x] Validación de workflows" >> health-report.md
+          echo "- [x] Verificación de sintaxis YAML" >> health-report.md
+          echo "- [x] Verificación de versiones de actions" >> health-report.md
+          echo "- [x] Verificación de configuración de secrets" >> health-report.md
+          echo "" >> health-report.md
+          echo "## 📝 Próximos pasos:" >> health-report.md
+          echo "1. Revisar cualquier advertencia mostrada arriba" >> health-report.md
+          echo "2. Actualizar actions si es necesario" >> health-report.md
+          echo "3. Configurar secrets faltantes en GitHub" >> health-report.md
+
+      - name: Upload health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-health-report
+          path: health-report.md

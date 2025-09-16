@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/strict-boolean-expressions */
 import type { User, UserInsert } from '@/types';
 import { securityLogger } from '@/utils/security-config';
 

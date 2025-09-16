@@ -9,18 +9,18 @@ Este documento describe los secrets requeridos para que los workflows de GitHub 
 Estos secrets son necesarios para la conexión con la base de datos y autenticación:
 
 - **`NEXT_PUBLIC_SUPABASE_URL`**: URL de tu proyecto Supabase
-  - Ejemplo: `https://mfvifwfmvhbztprakeaj.supabase.co`
+  - Ejemplo: `https://your-project-id.supabase.co`
 
 - **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: Clave pública anónima de Supabase
-  - Ejemplo: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+  - Ejemplo: `your-anon-key`
 
 - **`SUPABASE_SERVICE_ROLE_KEY`**: Clave de servicio de Supabase
-  - Ejemplo: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+  - Ejemplo: `your-service-role-key`
 
 ### **Google Maps API**
 
 - **`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**: Clave de API de Google Maps
-  - Ejemplo: `AIzaSyDww_H65hY2M-ybNSCE5gYKEEZwXlTFkRI`
+  - Ejemplo: `your-google-maps-api-key`
 
 ### **Vercel Secrets (Opcional)**
 

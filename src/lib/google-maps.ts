@@ -162,12 +162,11 @@ export const loadGoogleMapsAPI = (
         } else {
           attempts += 1;
           window.setTimeout(() => {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             checkLoaded();
           }, 100);
         }
       };
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
       checkLoaded();
       return;
     }
