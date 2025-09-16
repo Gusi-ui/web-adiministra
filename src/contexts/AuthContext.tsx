@@ -165,10 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updated_at: authData.user.updated_at ?? authData.user.created_at,
       };
 
-      // Guardar solo el ID del worker en localStorage (mejor práctica de seguridad)
-      if (typeof window !== 'undefined' && worker.id) {
-        localStorage.setItem('worker_id', worker.id);
-      }
+      // No guardar ningún dato en localStorage para cumplir con CodeQL
 
       dispatch({ type: 'AUTH_SUCCESS', payload: worker });
 
