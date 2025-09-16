@@ -165,15 +165,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updated_at: authData.user.updated_at ?? authData.user.created_at,
       };
 
-      // Guardar en almacenamiento seguro
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('worker', JSON.stringify(worker));
-        if (
-          authData.session?.access_token != null &&
-          authData.session.access_token !== ''
-        ) {
-          localStorage.setItem('token', authData.session.access_token);
-        }
+      // Guardar solo el ID del worker en localStorage (mejor práctica de seguridad)
+      if (typeof window !== 'undefined' && worker.id) {
+        localStorage.setItem('worker_id', worker.id);
       }
 
       dispatch({ type: 'AUTH_SUCCESS', payload: worker });
