@@ -243,7 +243,7 @@ export default function PlanningPage() {
         const { data: workersData, error: workersError } = await supabase
           .from('workers')
           .select('name, surname')
-          .eq('status', 'active');
+          .eq('is_active', true);
 
         if (workersError) {
           logger.error('Error cargando trabajadoras:', workersError);
@@ -258,7 +258,7 @@ export default function PlanningPage() {
         const { data: usersData, error: usersError } = await supabase
           .from('users')
           .select('name, surname')
-          .eq('status', 'active');
+          .eq('is_active', true);
 
         if (usersError) {
           logger.error('Error cargando usuarios:', usersError);
