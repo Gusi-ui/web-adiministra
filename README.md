@@ -6,7 +6,7 @@ Sistema de gestión de horas y asignaciones para trabajadores de servicios asist
 
 Esta aplicación está desplegada en Vercel:
 
-- **URL de Producción**: [sad-las-web.vercel.app](https://web-adiministrador.vercel.app/)
+- **URL de Producción**:[web-administra](https://web-adiministrador.vercel.app/)
 - **Repositorio**: [web-adiministra](https://github.com/Gusi-ui/web-adiministra.git)
 - **Status**: ✅ Deployment automático configurado con GitHub Actions
 - **Última actualización**: $(date)
