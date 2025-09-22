@@ -17,9 +17,10 @@ import {
   getAdmins,
   resetAdminPassword,
 } from '@/lib/admin-query';
+import { getActivities } from '@/lib/activities-query';
 import { getAllUsers } from '@/lib/users-query';
 import { getWorkersStats } from '@/lib/workers-query';
-import type { User as AdminUser } from '@/types';
+import type { User as AdminUser, Activity } from '@/types';
 
 interface WorkersStats {
   total: number;
@@ -86,6 +87,7 @@ export default function SuperDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
   // Limpiar mensajes después de un tiempo
   useEffect(() => {
@@ -161,6 +163,10 @@ export default function SuperDashboardPage() {
             u => u.is_active === false || u.is_active === null
           ).length,
         });
+
+        // Cargar actividades recientes
+        const activities = await getActivities();
+        setRecentActivities(activities);
       } catch (err) {
         setError('No se pudieron cargar los datos del dashboard.');
         // eslint-disable-next-line no-console
@@ -586,6 +592,310 @@ export default function SuperDashboardPage() {
                 </div>
               </div>
             </Link>
+          </div>
+
+          {/* Navegación Principal - Acciones Rápidas y Actividad Reciente */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 lg:gap-8 mb-6 md:mb-8'>
+            <div className='bg-white rounded-2xl shadow-lg p-4 md:p-6 border border-gray-100'>
+              <h2 className='text-lg lg:text-xl font-bold text-gray-900 mb-4'>
+                🚀 Acciones Rápidas
+              </h2>
+              <div className='space-y-3'>
+                <Link href='/workers' className='block'>
+                  <div className='w-full text-left p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-200 border border-blue-200'>
+                    <div className='flex items-center space-x-3'>
+                      <span className='text-2xl'>👥</span>
+                      <div className='flex-1'>
+                        <p className='font-semibold text-gray-900'>
+                          Gestionar Trabajadoras
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          Añadir, editar o eliminar trabajadoras
+                        </p>
+                      </div>
+                      <svg
+                        className='w-5 h-5 text-blue-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 5l7 7-7 7'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href='/users' className='block'>
+                  <div className='w-full text-left p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-200 border border-green-200'>
+                    <div className='flex items-center space-x-3'>
+                      <span className='text-2xl'>👤</span>
+                      <div className='flex-1'>
+                        <p className='font-semibold text-gray-900'>
+                          Gestionar Usuarios
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          Administrar usuarios del servicio
+                        </p>
+                      </div>
+                      <svg
+                        className='w-5 h-5 text-green-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 5l7 7-7 7'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href='/assignments' className='block'>
+                  <div className='w-full text-left p-4 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl hover:from-indigo-100 hover:to-indigo-200 transition-all duration-200 border border-indigo-200'>
+                    <div className='flex items-center space-x-3'>
+                      <span className='text-2xl'>📋</span>
+                      <div className='flex-1'>
+                        <p className='font-semibold text-gray-900'>
+                          Gestionar Asignaciones
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          Crear, editar o eliminar asignaciones
+                        </p>
+                      </div>
+                      <svg
+                        className='w-5 h-5 text-indigo-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 5l7 7-7 7'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href='/planning' className='block'>
+                  <div className='w-full text-left p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-200 border border-purple-200'>
+                    <div className='flex items-center space-x-3'>
+                      <span className='text-2xl'>📅</span>
+                      <div className='flex-1'>
+                        <p className='font-semibold text-gray-900'>
+                          Planificar Servicios
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          Crear y gestionar asignaciones
+                        </p>
+                      </div>
+                      <svg
+                        className='w-5 h-5 text-purple-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 5l7 7-7 7'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href='/holidays' className='block'>
+                  <div className='w-full text-left p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-xl hover:from-red-100 hover:to-red-200 transition-all duration-200 border border-red-200'>
+                    <div className='flex items-center space-x-3'>
+                      <span className='text-2xl'>🎯</span>
+                      <div className='flex-1'>
+                        <p className='font-semibold text-gray-900'>
+                          Gestión de Festivos
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          Administrar festivos y políticas
+                        </p>
+                      </div>
+                      <svg
+                        className='w-5 h-5 text-red-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 5l7 7-7 7'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link href='/balances' className='block'>
+                  <div className='w-full text-left p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl hover:from-orange-100 hover:to-orange-200 transition-all duration-200 border border-orange-200'>
+                    <div className='flex items-center space-x-3'>
+                      <span className='text-2xl'>⏰</span>
+                      <div className='flex-1'>
+                        <p className='font-semibold text-gray-900'>
+                          Control de Horas
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          Revisar balances y horarios
+                        </p>
+                      </div>
+                      <svg
+                        className='w-5 h-5 text-orange-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 5l7 7-7 7'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            <div className='bg-white rounded-2xl shadow-lg p-4 md:p-6 border border-gray-100'>
+              <h2 className='text-lg lg:text-xl font-bold text-gray-900 mb-4'>
+                📊 Actividad Reciente
+              </h2>
+              <div className='space-y-4'>
+                {recentActivities.length > 0 ? (
+                  // Actividades reales
+                  recentActivities.map(activity => {
+                    const getActivityIcon = (type: string): string => {
+                      switch (type) {
+                        case 'worker_created':
+                          return '👷';
+                        case 'worker_updated':
+                          return '✏️';
+                        case 'worker_deleted':
+                          return '🗑️';
+                        case 'user_created':
+                          return '👤';
+                        case 'user_updated':
+                          return '✏️';
+                        case 'user_deleted':
+                          return '🗑️';
+                        case 'assignment_created':
+                          return '📅';
+                        case 'assignment_completed':
+                          return '✅';
+                        case 'admin_created':
+                          return '👑';
+                        case 'admin_updated':
+                          return '✏️';
+                        case 'admin_deleted':
+                          return '🗑️';
+                        case 'login':
+                          return '🔐';
+                        case 'logout':
+                          return '🚪';
+                        default:
+                          return '📝';
+                      }
+                    };
+
+                    const getActivityColor = (type: string): string => {
+                      switch (type) {
+                        case 'worker_created':
+                        case 'user_created':
+                        case 'admin_created':
+                          return 'from-green-50 to-green-100 border-green-200';
+                        case 'worker_updated':
+                        case 'user_updated':
+                        case 'admin_updated':
+                          return 'from-blue-50 to-blue-100 border-blue-200';
+                        case 'worker_deleted':
+                        case 'user_deleted':
+                        case 'admin_deleted':
+                          return 'from-red-50 to-red-100 border-red-200';
+                        case 'assignment_created':
+                          return 'from-purple-50 to-purple-100 border-purple-200';
+                        case 'assignment_completed':
+                          return 'from-green-50 to-green-100 border-green-200';
+                        case 'login':
+                          return 'from-blue-50 to-blue-100 border-blue-200';
+                        case 'logout':
+                          return 'from-gray-50 to-gray-100 border-gray-200';
+                        default:
+                          return 'from-gray-50 to-gray-100 border-gray-200';
+                      }
+                    };
+
+                    const getInitials = (name: string): string =>
+                      name
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2);
+
+                    return (
+                      <div
+                        key={activity.id}
+                        className={`flex items-center space-x-3 p-3 bg-gradient-to-r ${getActivityColor(
+                          activity.activity_type
+                        )} rounded-xl border`}
+                      >
+                        <div className='w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center'>
+                          <span className='text-white text-sm font-bold'>
+                            {activity.user_name !== null &&
+                            activity.user_name !== undefined
+                              ? getInitials(activity.user_name)
+                              : '👤'}
+                          </span>
+                        </div>
+                        <div className='flex-1'>
+                          <p className='text-sm font-medium text-gray-900'>
+                            {activity.user_name ?? 'Usuario del sistema'}
+                          </p>
+                          <p className='text-xs text-gray-600 flex items-center space-x-1'>
+                            <span>
+                              {getActivityIcon(activity.activity_type)}
+                            </span>
+                            <span>{activity.description}</span>
+                          </p>
+                        </div>
+                        <span className='text-xs text-gray-500'>
+                          {activity.time_ago ?? 'Reciente'}
+                        </span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Estado vacío
+                  <div className='text-center py-8 text-gray-500'>
+                    <p className='text-sm'>No hay actividades recientes</p>
+                    <p className='text-xs mt-1'>
+                      Las actividades aparecerán aquí automáticamente
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Sección de Administradores */}
