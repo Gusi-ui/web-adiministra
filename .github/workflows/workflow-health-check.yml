@@ -24,6 +24,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create environment file for validation
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GOOGLE_MAPS_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+        run: |
+          echo "🔧 Configurando variables de entorno para validación..."
+
+          # Usar valores de secrets o placeholders para desarrollo
+          SUPABASE_URL_VALUE="${SUPABASE_URL:-https://placeholder.supabase.co}"
+          SUPABASE_ANON_KEY_VALUE="${SUPABASE_ANON_KEY:-placeholder-key}"
+          SUPABASE_SERVICE_KEY_VALUE="${SUPABASE_SERVICE_KEY:-placeholder-service-key}"
+          GOOGLE_MAPS_KEY_VALUE="${GOOGLE_MAPS_KEY:-placeholder-maps-key}"
+
+          # Crear archivo .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL_VALUE" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY_VALUE" >> .env.local
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_KEY_VALUE" >> .env.local
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_KEY_VALUE" >> .env.local
+
+          echo "✅ Archivo .env.local creado para validación"
+
       - name: Validate workflows
         run: npm run validate-workflows
 
