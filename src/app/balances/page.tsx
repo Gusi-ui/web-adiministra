@@ -265,15 +265,53 @@ export default function BalancesPage() {
           <div className='mb-6'>
             <Card className='p-4'>
               <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3'>
-                <div className='flex items-center gap-2'>
-                  <Button variant='outline' size='sm' onClick={goPrevMonth}>
-                    ← Mes anterior
+                <div className='flex items-center justify-center lg:justify-start space-x-3 h-12 flex-none'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={goPrevMonth}
+                    className='flex items-center space-x-1 px-3 py-2 h-10 text-sm font-medium'
+                  >
+                    <svg
+                      className='w-4 h-4'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M15 19l-7-7 7-7'
+                      />
+                    </svg>
+                    <span className='hidden sm:inline'>Anterior</span>
                   </Button>
-                  <h2 className='text-lg font-semibold text-gray-900 capitalize'>
+
+                  <h2 className='text-lg lg:text-xl font-bold text-gray-900 text-center'>
                     {monthName} {currentYear}
                   </h2>
-                  <Button variant='outline' size='sm' onClick={goNextMonth}>
-                    Mes siguiente →
+
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={goNextMonth}
+                    className='flex items-center space-x-1 px-3 py-2 h-10 text-sm font-medium'
+                  >
+                    <span className='hidden sm:inline'>Siguiente</span>
+                    <svg
+                      className='w-4 h-4'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M9 5l7 7-7 7'
+                      />
+                    </svg>
                   </Button>
                 </div>
                 <div className='flex flex-col sm:flex-row gap-2 w-full lg:w-auto'>
