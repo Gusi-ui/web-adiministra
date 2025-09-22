@@ -15,6 +15,7 @@ import {
   type UserMonthlyBalance,
   type WorkerUserMonthlyBalanceRow,
 } from '@/lib/user-calculations';
+import { logger } from '@/utils/logger';
 
 export default function BalancesPage() {
   const dashboardUrl = useDashboardUrl();
@@ -67,7 +68,7 @@ export default function BalancesPage() {
           .eq('is_active', true);
 
         if (workersError) {
-          console.error('Error cargando trabajadoras:', workersError);
+          logger.error('Error cargando trabajadoras:', workersError);
         } else {
           const workers = (workersData ?? [])
             .map(w => `${w.name} ${w.surname}`.trim())
@@ -82,7 +83,7 @@ export default function BalancesPage() {
           .eq('is_active', true);
 
         if (usersError) {
-          console.error('Error cargando usuarios:', usersError);
+          logger.error('Error cargando usuarios:', usersError);
         } else {
           const users = (usersData ?? [])
             .map(u => `${u.name} ${u.surname}`.trim())
@@ -90,7 +91,7 @@ export default function BalancesPage() {
           setUserSuggestions(users);
         }
       } catch (error) {
-        console.error('Error cargando sugerencias:', error);
+        logger.error('Error cargando sugerencias:', error);
       }
     };
 
