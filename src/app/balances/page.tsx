@@ -6,16 +6,14 @@ import Link from 'next/link';
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Navigation from '@/components/layout/Navigation';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
+import { AutocompleteInput, Button, Card } from '@/components/ui';
 import { useDashboardUrl } from '@/hooks/useDashboardUrl';
 import { supabase } from '@/lib/database';
 import {
-  type UserMonthlyBalance,
-  type WorkerUserMonthlyBalanceRow,
   computeUserMonthlyBalance,
   computeWorkerUsersMonthlyBalances,
+  type UserMonthlyBalance,
+  type WorkerUserMonthlyBalanceRow,
 } from '@/lib/user-calculations';
 
 export default function BalancesPage() {
@@ -24,33 +22,11 @@ export default function BalancesPage() {
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState<number>(
     today.getMonth() + 1
-  ); // 1-12
-  const [workerQuery, setWorkerQuery] = useState<string>('');
-  const [workers, setWorkers] = useState<
-    Array<{ id: string; name: string | null; surname: string | null }>
-  >([]);
-  const [filteredWorkers, setFilteredWorkers] = useState<
-    Array<{ id: string; name: string | null; surname: string | null }>
-  >([]);
-  const [showWorkerDropdown, setShowWorkerDropdown] = useState<boolean>(false);
-  const [selectedWorker, setSelectedWorker] = useState<{
-    id: string;
-    name: string | null;
-    surname: string | null;
-  } | null>(null);
-  const [userQuery, setUserQuery] = useState<string>('');
-  const [users, setUsers] = useState<
-    Array<{ id: string; name: string | null; surname: string | null }>
-  >([]);
-  const [filteredUsers, setFilteredUsers] = useState<
-    Array<{ id: string; name: string | null; surname: string | null }>
-  >([]);
-  const [showUserDropdown, setShowUserDropdown] = useState<boolean>(false);
-  const [selectedUser, setSelectedUser] = useState<{
-    id: string;
-    name: string | null;
-    surname: string | null;
-  } | null>(null);
+  ); // 1-12 - Mes actual por defecto
+  const [selectedWorker, setSelectedWorker] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [workerSuggestions, setWorkerSuggestions] = useState<string[]>([]);
+  const [userSuggestions, setUserSuggestions] = useState<string[]>([]);
   const [balance, setBalance] = useState<UserMonthlyBalance | null>(null);
   const [workerRows, setWorkerRows] = useState<WorkerUserMonthlyBalanceRow[]>(
     []
@@ -76,103 +52,142 @@ export default function BalancesPage() {
 
   // Función para limpiar filtros
   const clearFilters = (): void => {
-    setWorkerQuery('');
-    setUserQuery('');
-    setSelectedWorker(null);
-    setSelectedUser(null);
-    setShowWorkerDropdown(false);
-    setShowUserDropdown(false);
+    setSelectedWorker('');
+    setSelectedUser('');
   };
 
-  // Cargar usuarios activos al montar
+  // Cargar listas de trabajadoras y usuarios para autocompletado
   useMemo(() => {
     const load = async () => {
-      const { data, error: usersError } = await supabase
-        .from('users')
-        .select('id, name, surname')
-        .eq('is_active', true)
-        .order('name');
-      if (usersError === null) {
-        const list = (data ?? []).map(
-          (u: { id: string; name: string | null; surname: string | null }) => ({
-            id: u.id,
-            name: u.name,
-            surname: u.surname,
-          })
-        );
-        setUsers(list);
-        setFilteredUsers(list);
-      }
-      const { data: wdata, error: workersError } = await supabase
-        .from('workers')
-        .select('id, name, surname')
-        .eq('is_active', true)
-        .order('name');
-      if (workersError === null) {
-        const wlist = (wdata ?? []).map(
-          (w: { id: string; name: string; surname: string }) => ({
-            id: w.id,
-            name: w.name,
-            surname: w.surname,
-          })
-        );
-        setWorkers(wlist);
-        setFilteredWorkers(wlist);
+      try {
+        // Cargar trabajadoras
+        const { data: workersData, error: workersError } = await supabase
+          .from('workers')
+          .select('name, surname')
+          .eq('is_active', true);
+
+        if (workersError) {
+          console.error('Error cargando trabajadoras:', workersError);
+        } else {
+          const workers = (workersData ?? [])
+            .map(w => `${w.name} ${w.surname}`.trim())
+            .filter(name => name !== '');
+          setWorkerSuggestions(workers);
+        }
+
+        // Cargar usuarios
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('name, surname')
+          .eq('is_active', true);
+
+        if (usersError) {
+          console.error('Error cargando usuarios:', usersError);
+        } else {
+          const users = (usersData ?? [])
+            .map(u => `${u.name} ${u.surname}`.trim())
+            .filter(name => name !== '');
+          setUserSuggestions(users);
+        }
+      } catch (error) {
+        console.error('Error cargando sugerencias:', error);
       }
     };
 
     load();
   }, []);
 
-  // Filtrado de usuarios por query
-  useMemo(() => {
-    const q = userQuery.toLowerCase().trim();
-    if (q === '') setFilteredUsers(users);
-    else
-      setFilteredUsers(
-        users.filter(u => `${u.name} ${u.surname}`.toLowerCase().includes(q))
-      );
-  }, [userQuery, users]);
-
-  // Filtrado de trabajadoras por query
-  useMemo(() => {
-    const q = workerQuery.toLowerCase().trim();
-    if (q === '') setFilteredWorkers(workers);
-    else
-      setFilteredWorkers(
-        workers.filter(w => `${w.name} ${w.surname}`.toLowerCase().includes(q))
-      );
-  }, [workerQuery, workers]);
-
   // Recalcular balance al seleccionar usuario o cambiar mes/año
   useMemo(() => {
-    if (selectedUser === null) return;
+    if (selectedUser === '') return;
     setError(null);
     setBalance(null);
-    computeUserMonthlyBalance(selectedUser.id, currentYear, currentMonth)
-      .then(res => {
-        if (res === null)
-          setError('No se encontró el usuario o no hay datos para el mes.');
-        else setBalance(res);
-      })
-      .catch(() => setError('Error calculando el balance.'));
+
+    // Buscar el usuario por nombre completo
+    const findUserByName = async () => {
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('is_active', true);
+
+      if (error || !userData) return null;
+
+      // Buscar usuario que coincida con el nombre completo
+      for (const user of userData) {
+        const { data: fullUserData } = await supabase
+          .from('users')
+          .select('name, surname')
+          .eq('id', user.id)
+          .single();
+
+        if (fullUserData) {
+          const fullName =
+            `${fullUserData.name} ${fullUserData.surname}`.trim();
+          if (fullName === selectedUser) {
+            return user.id;
+          }
+        }
+      }
+      return null;
+    };
+
+    findUserByName().then(userId => {
+      if (userId) {
+        computeUserMonthlyBalance(userId, currentYear, currentMonth)
+          .then(res => {
+            if (res === null)
+              setError('No se encontró el usuario o no hay datos para el mes.');
+            else setBalance(res);
+          })
+          .catch(() => setError('Error calculando el balance.'));
+      }
+    });
   }, [selectedUser, currentYear, currentMonth]);
 
   // Recalcular tabla por trabajadora cuando cambia selección o mes/año
   useMemo(() => {
-    if (selectedWorker === null) {
+    if (selectedWorker === '') {
       setWorkerRows([]);
       return;
     }
     setError(null);
     setWorkerRows([]);
-    computeWorkerUsersMonthlyBalances(
-      selectedWorker.id,
-      currentYear,
-      currentMonth
-    )
-      .then(rows => setWorkerRows(rows))
-      .catch(() => setError('Error calculando balances por trabajadora.'));
+
+    // Buscar la trabajadora por nombre completo
+    const findWorkerByName = async () => {
+      const { data: workerData, error } = await supabase
+        .from('workers')
+        .select('id')
+        .eq('is_active', true);
+
+      if (error || !workerData) return null;
+
+      // Buscar trabajadora que coincida con el nombre completo
+      for (const worker of workerData) {
+        const { data: fullWorkerData } = await supabase
+          .from('workers')
+          .select('name, surname')
+          .eq('id', worker.id)
+          .single();
+
+        if (fullWorkerData) {
+          const fullName =
+            `${fullWorkerData.name} ${fullWorkerData.surname}`.trim();
+          if (fullName === selectedWorker) {
+            return worker.id;
+          }
+        }
+      }
+      return null;
+    };
+
+    findWorkerByName().then(workerId => {
+      if (workerId) {
+        computeWorkerUsersMonthlyBalances(workerId, currentYear, currentMonth)
+          .then(rows => setWorkerRows(rows))
+          .catch(() => setError('Error calculando balances por trabajadora.'));
+      }
+    });
   }, [selectedWorker, currentYear, currentMonth]);
 
   const formatDifference = (diff: number): string => {
@@ -261,67 +276,25 @@ export default function BalancesPage() {
                   </Button>
                 </div>
                 <div className='flex flex-col sm:flex-row gap-2 w-full lg:w-auto'>
-                  <div className='relative flex-1 min-w-[260px]'>
-                    <Input
-                      placeholder='Buscar trabajadora'
-                      value={workerQuery}
-                      onChange={e => {
-                        setWorkerQuery(e.target.value);
-                        setShowWorkerDropdown(true);
-                      }}
-                      onFocus={() => setShowWorkerDropdown(true)}
-                      className='h-11 placeholder:text-gray-300'
+                  <div className='flex-1 min-w-[260px]'>
+                    <AutocompleteInput
+                      id='filter-worker-balances'
+                      aria-label='Buscar trabajadora'
+                      placeholder='🔍 Buscar trabajadora'
+                      value={selectedWorker}
+                      onChange={setSelectedWorker}
+                      suggestions={workerSuggestions}
                     />
-                    {showWorkerDropdown && filteredWorkers.length > 0 && (
-                      <div className='absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto'>
-                        {filteredWorkers.map(w => (
-                          <div
-                            key={w.id}
-                            className='px-4 py-2 hover:bg-gray-100 cursor-pointer'
-                            onClick={() => {
-                              setSelectedWorker(w);
-                              setWorkerQuery(`${w.name} ${w.surname}`);
-                              setShowWorkerDropdown(false);
-                            }}
-                          >
-                            <span className='font-medium text-gray-900'>
-                              {w.name} {w.surname}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                  <div className='relative flex-1 min-w-[260px]'>
-                    <Input
-                      placeholder='Buscar usuario'
-                      value={userQuery}
-                      onChange={e => {
-                        setUserQuery(e.target.value);
-                        setShowUserDropdown(true);
-                      }}
-                      onFocus={() => setShowUserDropdown(true)}
-                      className='h-11 placeholder:text-gray-300'
+                  <div className='flex-1 min-w-[260px]'>
+                    <AutocompleteInput
+                      id='filter-user-balances'
+                      aria-label='Buscar usuario'
+                      placeholder='👤 Buscar usuario'
+                      value={selectedUser}
+                      onChange={setSelectedUser}
+                      suggestions={userSuggestions}
                     />
-                    {showUserDropdown && filteredUsers.length > 0 && (
-                      <div className='absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto'>
-                        {filteredUsers.map(u => (
-                          <div
-                            key={u.id}
-                            className='px-4 py-2 hover:bg-gray-100 cursor-pointer'
-                            onClick={() => {
-                              setSelectedUser(u);
-                              setUserQuery(`${u.name} ${u.surname}`);
-                              setShowUserDropdown(false);
-                            }}
-                          >
-                            <span className='font-medium text-gray-900'>
-                              {u.name} {u.surname}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <Button
                     variant='outline'
@@ -416,9 +389,7 @@ export default function BalancesPage() {
                   <p className='text-sm text-gray-700'>
                     Usuario:{' '}
                     <span className='font-semibold'>
-                      {selectedUser
-                        ? `${selectedUser.name} ${selectedUser.surname}`
-                        : ''}
+                      {selectedUser || 'No seleccionado'}
                     </span>
                   </p>
                   <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'>
@@ -473,7 +444,7 @@ export default function BalancesPage() {
                 </div>
               )}
               {/* Lista móvil (mostrar sólo en < md) */}
-              {selectedWorker !== null && workerRows.length > 0 && (
+              {selectedWorker !== '' && workerRows.length > 0 && (
                 <div className='md:hidden px-4 lg:px-6 py-4 space-y-3'>
                   {workerRows.map(row => (
                     <div
@@ -539,7 +510,7 @@ export default function BalancesPage() {
                   </tr>
                 </thead>
                 <tbody className='bg-white divide-y divide-gray-200'>
-                  {selectedWorker === null ? (
+                  {selectedWorker === '' ? (
                     <tr>
                       <td
                         colSpan={5}
