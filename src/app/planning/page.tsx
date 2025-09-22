@@ -6,12 +6,10 @@ import Link from 'next/link';
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Navigation from '@/components/layout/Navigation';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Modal from '@/components/ui/Modal';
+import { AutocompleteInput, Button, Card, Modal } from '@/components/ui';
 import { useDashboardUrl } from '@/hooks/useDashboardUrl';
 import { supabase } from '@/lib/database';
-import { type Holiday, getHolidaysForMonth } from '@/lib/holidays-query';
+import { getHolidaysForMonth, type Holiday } from '@/lib/holidays-query';
 import { logger } from '@/utils/logger';
 
 interface DayTimeSlot {
@@ -65,8 +63,9 @@ type MonthGridCell = {
 };
 
 export default function PlanningPage() {
-  const [year, setYear] = useState<number>(2025);
-  const [month, setMonth] = useState<number>(8); // Agosto por defecto
+  const currentDate = new Date();
+  const [year, setYear] = useState<number>(currentDate.getFullYear());
+  const [month, setMonth] = useState<number>(currentDate.getMonth() + 1); // Mes actual por defecto
   const [loading, setLoading] = useState<boolean>(true);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [entriesByDate, setEntriesByDate] = useState<
@@ -82,6 +81,8 @@ export default function PlanningPage() {
   // Consultas de filtro por texto (mobile-first)
   const [selectedWorker, setSelectedWorker] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<string>('');
+  const [workerSuggestions, setWorkerSuggestions] = useState<string[]>([]);
+  const [userSuggestions, setUserSuggestions] = useState<string[]>([]);
 
   const dashboardUrl = useDashboardUrl();
 
@@ -234,6 +235,47 @@ export default function PlanningPage() {
     return (raw as Record<string, DaySchedule>) ?? {};
   };
 
+  // Cargar listas de trabajadoras y usuarios para autocompletado
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      try {
+        // Cargar trabajadoras
+        const { data: workersData, error: workersError } = await supabase
+          .from('workers')
+          .select('name, surname')
+          .eq('status', 'active');
+
+        if (workersError) {
+          logger.error('Error cargando trabajadoras:', workersError);
+        } else {
+          const workers = (workersData ?? [])
+            .map(w => `${w.name} ${w.surname}`.trim())
+            .filter(name => name !== '');
+          setWorkerSuggestions(workers);
+        }
+
+        // Cargar usuarios
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('name, surname')
+          .eq('status', 'active');
+
+        if (usersError) {
+          logger.error('Error cargando usuarios:', usersError);
+        } else {
+          const users = (usersData ?? [])
+            .map(u => `${u.name} ${u.surname}`.trim())
+            .filter(name => name !== '');
+          setUserSuggestions(users);
+        }
+      } catch (error) {
+        logger.error('Error cargando sugerencias:', error);
+      }
+    };
+
+    loadSuggestions();
+  }, []);
+
   // Cargar festivos y asignaciones del mes
   useEffect(() => {
     const loadData = async () => {
@@ -243,7 +285,7 @@ export default function PlanningPage() {
         const monthHolidays = await getHolidaysForMonth(month, year);
         // eslint-disable-next-line no-console
         console.log(
-          'Festivos cargados para agosto 2025:',
+          `Festivos cargados para ${month}/${year}:`,
           JSON.stringify(monthHolidays, null, 2)
         );
 
@@ -700,30 +742,24 @@ export default function PlanningPage() {
                 {/* Filters */}
                 <div className='w-full lg:flex-1 lg:min-w-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:flex lg:space-x-3 lg:items-center'>
                   {/* Worker Filter */}
-                  <div className='relative'>
-                    <input
-                      id='filter-worker'
-                      aria-label='Buscar trabajadora'
-                      type='text'
-                      className='w-full px-4 py-2 h-10 border border-gray-300 rounded-lg placeholder-gray-400 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
-                      placeholder='🔍 Buscar trabajadora'
-                      value={selectedWorker}
-                      onChange={e => setSelectedWorker(e.target.value)}
-                    />
-                  </div>
+                  <AutocompleteInput
+                    id='filter-worker'
+                    aria-label='Buscar trabajadora'
+                    placeholder='🔍 Buscar trabajadora'
+                    value={selectedWorker}
+                    onChange={setSelectedWorker}
+                    suggestions={workerSuggestions}
+                  />
 
                   {/* User Filter */}
-                  <div className='relative'>
-                    <input
-                      id='filter-user'
-                      aria-label='Buscar usuario'
-                      type='text'
-                      className='w-full px-4 py-2 h-10 border border-gray-300 rounded-lg placeholder-gray-400 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
-                      placeholder='👤 Buscar usuario'
-                      value={selectedUser}
-                      onChange={e => setSelectedUser(e.target.value)}
-                    />
-                  </div>
+                  <AutocompleteInput
+                    id='filter-user'
+                    aria-label='Buscar usuario'
+                    placeholder='👤 Buscar usuario'
+                    value={selectedUser}
+                    onChange={setSelectedUser}
+                    suggestions={userSuggestions}
+                  />
 
                   {/* Clear Filters */}
                   <Button
