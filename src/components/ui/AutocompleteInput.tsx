@@ -27,15 +27,19 @@ export default function AutocompleteInput({
   const listRef = useRef<HTMLDivElement>(null);
 
   // Filtrar sugerencias basadas en el valor actual
-  const filteredSuggestions = suggestions.filter(suggestion =>
-    suggestion.toLowerCase().includes(value.toLowerCase())
-  );
+  const filteredSuggestions =
+    value.length > 0
+      ? suggestions.filter(suggestion =>
+          suggestion.toLowerCase().includes(value.toLowerCase())
+        )
+      : suggestions; // Mostrar todas las sugerencias si no hay valor
 
   // Mostrar/ocultar lista cuando hay sugerencias
   useEffect(() => {
-    setIsOpen(value.length > 0 && filteredSuggestions.length > 0);
+    // Mostrar sugerencias si hay valor o si el campo está enfocado
+    setIsOpen((value.length > 0 || isOpen) && filteredSuggestions.length > 0);
     setHighlightedIndex(-1);
-  }, [value, filteredSuggestions.length]);
+  }, [value, filteredSuggestions.length, isOpen]);
 
   // Manejar selección de sugerencia
   const handleSuggestionClick = (suggestion: string) => {
@@ -100,7 +104,8 @@ export default function AutocompleteInput({
         onChange={e => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={() => {
-          if (value.length > 0 && filteredSuggestions.length > 0) {
+          // Mostrar todas las sugerencias al hacer clic en el campo
+          if (suggestions.length > 0) {
             setIsOpen(true);
           }
         }}
