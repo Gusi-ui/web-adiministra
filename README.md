@@ -14,7 +14,7 @@ Esta aplicación está desplegada en Vercel:
 ## 📱 Proyectos Relacionados
 
 - **Aplicación Web**: Este repositorio (Dashboard + API)
-- **Aplicación Móvil**: [sad-las-mobile](https://github.com/Gusi-ui/sad-las-mobile.git)
+- **Aplicación Móvil**: [mobile-app](https://github.com/Gusi-ui/movile-app)
 
 ## 🚀 Características
 
