@@ -81,7 +81,7 @@
     "sharp": "^0.34.4",
     "supabase": "^2.33.7",
     "tailwindcss": "^4",
-    "tsx": "^4.20.5",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }
