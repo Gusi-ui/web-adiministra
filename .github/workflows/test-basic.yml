@@ -1,0 +1,45 @@
+name: Test Basic Workflow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-basic:
+    name: Basic Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Test basic commands
+        run: |
+          echo "✅ Workflow is running"
+          echo "Current directory: $(pwd)"
+          echo "Files in directory:"
+          ls -la
+          echo "Node.js version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+
+      - name: Check package.json
+        run: |
+          echo "📦 Package.json exists:"
+          cat package.json | head -10
+
+      - name: Test npm install
+        run: |
+          echo "📥 Installing dependencies..."
+          npm ci
+          echo "✅ Dependencies installed successfully"
+
+      - name: Test basic npm scripts
+        run: |
+          echo "🔍 Testing lint..."
+          npm run lint
+          echo "✅ Lint passed"
+
+          echo "🔧 Testing type-check..."
+          npm run type-check
+          echo "✅ Type-check passed"
