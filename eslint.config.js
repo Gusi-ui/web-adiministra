@@ -1,21 +1,32 @@
-// import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import { FlatCompat } from '@eslint/eslintrc';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// const compat = new FlatCompat({
-//   baseDirectory: import.meta.dirname,
-//   recommendedConfig: js.configs.recommended,
-// });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
 
 export default [
-  // Configuración base
-  js.configs.recommended,
-
-  // Configuración para archivos TypeScript y TSX
+  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'build/**',
+      'next-env.d.ts',
+    ],
+  }, // Configuración base
+  js.configs.recommended, // Configuración para archivos TypeScript y TSX
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -88,9 +99,7 @@ export default [
       '@next/next/no-img-element': 'error',
       '@next/next/no-html-link-for-pages': 'error',
     },
-  },
-
-  // Configuración para archivos JavaScript y JSX
+  }, // Configuración para archivos JavaScript y JSX
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -152,9 +161,7 @@ export default [
       '@next/next/no-img-element': 'error',
       '@next/next/no-html-link-for-pages': 'error',
     },
-  },
-
-  // Configuración para archivos de configuración
+  }, // Configuración para archivos de configuración
   {
     files: ['**/*.config.{js,ts}', '**/eslint.config.js'],
     languageOptions: {
@@ -164,9 +171,7 @@ export default [
     rules: {
       'no-console': 'off',
     },
-  },
-
-  // Configuración para archivos de scripts
+  }, // Configuración para archivos de scripts
   {
     files: ['scripts/**/*.{js,ts}'],
     languageOptions: {
