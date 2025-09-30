@@ -35,6 +35,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install optional dependencies
+        run: |
+          npm install --no-save --force lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
+          cp node_modules/lightningcss-linux-x64-gnu/lightningcss.linux-x64-gnu.node node_modules/lightningcss/
+          cp node_modules/@tailwindcss/oxide-linux-x64-gnu/tailwindcss-oxide.linux-x64-gnu.node node_modules/@tailwindcss/oxide/
+
       - name: Check if .env.local exists
         run: |
           if [ -f .env.local ]; then
