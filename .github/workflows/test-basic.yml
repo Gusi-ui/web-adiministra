@@ -37,7 +37,9 @@ jobs:
       - name: Install optional dependencies
         run: |
           echo "📥 Installing optional dependencies..."
-          npm install --no-save lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
+          npm install --no-save --force lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
+          cp node_modules/lightningcss-linux-x64-gnu/lightningcss.linux-x64-gnu.node node_modules/lightningcss/
+          cp node_modules/@tailwindcss/oxide-linux-x64-gnu/tailwindcss-oxide.linux-x64-gnu.node node_modules/@tailwindcss/oxide/
           echo "✅ Optional dependencies installed successfully"
 
       - name: Test basic npm scripts
