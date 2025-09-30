@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Install optional dependencies
-        run: npm install --no-save lightningcss-linux-x64-gnu
+        run: npm install --no-save lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
       - name: Create .env.local
         run: |

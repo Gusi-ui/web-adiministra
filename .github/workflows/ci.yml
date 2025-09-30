@@ -32,7 +32,7 @@ jobs:
         run: npm ci
 
       - name: Install optional dependencies
-        run: npm install --no-save lightningcss-linux-x64-gnu
+        run: npm install --no-save lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
       - name: Run TypeScript check
         run: npm run type-check
@@ -65,7 +65,7 @@ jobs:
         run: npm ci
 
       - name: Install optional dependencies
-        run: npm install --no-save lightningcss-linux-x64-gnu
+        run: npm install --no-save lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
       - name: Run tests (when implemented)
         run: echo "Tests will be implemented later"
