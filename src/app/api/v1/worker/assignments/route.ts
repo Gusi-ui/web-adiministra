@@ -21,7 +21,6 @@ export async function OPTIONS() {
 export async function GET(request: Request) {
   try {
     const worker = await getWorkerFromToken(request);
-    console.log('👤 Worker obtenido:', worker.id, worker.email);
     const { searchParams } = new URL(request.url);
 
     // Filtros opcionales
@@ -53,7 +52,6 @@ export async function GET(request: Request) {
     const { data: assignments, error, count } = await query;
 
     if (error) {
-      console.error('🚨 Error de Supabase en assignments:', error);
       throw new Error(`Error obteniendo asignaciones: ${error.message}`);
     }
 

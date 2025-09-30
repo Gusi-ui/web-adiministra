@@ -116,7 +116,6 @@ export async function GET(request: Request) {
       { headers: corsHeaders }
     );
   } catch (error) {
-    console.error('Balances error:', error);
     return NextResponse.json(
       {
         data: null,

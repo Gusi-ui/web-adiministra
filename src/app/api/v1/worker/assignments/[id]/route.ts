@@ -59,7 +59,6 @@ export async function GET(
       status: 200,
     });
   } catch (error) {
-    console.error('Assignment detail error:', error);
     return NextResponse.json(
       {
         data: null,
@@ -104,7 +103,6 @@ export async function PUT(
       status: 200,
     });
   } catch (error) {
-    console.error('Update assignment error:', error);
     return NextResponse.json(
       {
         data: null,

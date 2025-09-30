@@ -103,17 +103,7 @@ export async function POST(
       priority,
     };
 
-    // Debug logging for notification creation (remove in production)
-    // eslint-disable-next-line no-console
-    console.log('Intentando crear notificación:', notificationData);
-    // eslint-disable-next-line no-console
-    console.log('SUPABASE_URL:', process.env['NEXT_PUBLIC_SUPABASE_URL']);
-    // Debug logging for service role key (remove in production)
-    // eslint-disable-next-line no-console
-    console.log(
-      'SERVICE_ROLE_KEY length:',
-      process.env['SUPABASE_SERVICE_ROLE_KEY']?.length
-    );
+    // Logs de debug removidos por seguridad
 
     const { data: notification, error } = await supabase
       .from('worker_notifications')
@@ -133,8 +123,7 @@ export async function POST(
       );
     }
 
-    // eslint-disable-next-line no-console
-    console.log('Notificación creada exitosamente:', notification);
+    // Notificación creada exitosamente (log removido por seguridad)
 
     // Enviar notificación push en tiempo real aquí
     // await sendPushNotification(notification);
