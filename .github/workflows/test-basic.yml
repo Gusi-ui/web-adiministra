@@ -34,6 +34,12 @@ jobs:
           npm ci
           echo "✅ Dependencies installed successfully"
 
+      - name: Install optional dependencies
+        run: |
+          echo "📥 Installing optional dependencies..."
+          npm install --no-save lightningcss-linux-x64-gnu
+          echo "✅ Optional dependencies installed successfully"
+
       - name: Test basic npm scripts
         run: |
           echo "🔍 Testing lint..."
