@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 echo "🔍 Ejecutando validaciones de código..."
 
 # Verificar que no hay errores de linting
