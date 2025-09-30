@@ -203,8 +203,8 @@ const RouteExportSummary = ({
       </html>
     `;
 
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
+    // Usar innerHTML en lugar de document.write por seguridad
+    printWindow.document.body.innerHTML = htmlContent;
     printWindow.focus();
     setTimeout(() => {
       printWindow.print();

@@ -44,5 +44,13 @@ query-filters:
       tags contain: javascript
   - include:
       tags contain: typescript
+  - include:
+      tags contain: correctness
+  - include:
+      tags contain: maintainability
   - exclude:
       tags contain: experimental
+  - exclude:
+      tags contain: external/cwe/cwe-079 # XSS ya manejado
+  - exclude:
+      tags contain: external/cwe/cwe-089 # SQL injection no aplicable con Supabase
