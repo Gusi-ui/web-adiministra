@@ -116,6 +116,7 @@ export default function AutocompleteInput({
         aria-label={ariaLabel}
         aria-expanded={isOpen}
         aria-haspopup='listbox'
+        aria-controls={`${id}-listbox`}
         role='combobox'
         autoComplete='off'
       />
@@ -124,6 +125,7 @@ export default function AutocompleteInput({
       {isOpen && filteredSuggestions.length > 0 && (
         <div
           ref={listRef}
+          id={`${id}-listbox`}
           className='absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto'
           role='listbox'
         >
