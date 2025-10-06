@@ -1,0 +1,6 @@
+# Gitleaks ignore file
+# Files listed here will be excluded from secret scanning
+
+# Configuration files containing example patterns for secret scanning
+.github/secret-scanning.yml
+.github/secret-scanning-patterns.yml
