@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -13,8 +13,6 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const { signIn } = useAuth();
   const router = useRouter();
@@ -27,33 +25,29 @@ export default function LoginForm() {
     }
   }, []);
 
-  // Validación en tiempo real del email
-  useEffect(() => {
+  // Validación en tiempo real del email usando useMemo
+  const emailError = useMemo(() => {
     if (email === '') {
-      setEmailError(null);
-      return;
+      return null;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setEmailError('Por favor, introduce un email válido');
-    } else {
-      setEmailError(null);
+      return 'Por favor, introduce un email válido';
     }
+    return null;
   }, [email]);
 
-  // Validación en tiempo real de la contraseña
-  useEffect(() => {
+  // Validación en tiempo real de la contraseña usando useMemo
+  const passwordError = useMemo(() => {
     if (password === '') {
-      setPasswordError(null);
-      return;
+      return null;
     }
 
     if (password.length < 6) {
-      setPasswordError('La contraseña debe tener al menos 6 caracteres');
-    } else {
-      setPasswordError(null);
+      return 'La contraseña debe tener al menos 6 caracteres';
     }
+    return null;
   }, [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {

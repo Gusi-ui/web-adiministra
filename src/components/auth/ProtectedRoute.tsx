@@ -27,7 +27,6 @@ export default function ProtectedRoute({
     // Si no hay usuario, redirigir al login inmediatamente
     if (user === null || user === undefined) {
       router.replace('/auth');
-      setIsAuthorized(false);
       return;
     }
 
@@ -48,7 +47,6 @@ export default function ProtectedRoute({
               : '/worker-dashboard';
 
         router.replace(redirectTo ?? defaultRedirect);
-        setIsAuthorized(false);
         return;
       }
     }
