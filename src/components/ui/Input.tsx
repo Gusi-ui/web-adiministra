@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
@@ -22,7 +22,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id ?? `input-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
 
     const baseClasses =
       'block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base text-gray-900 placeholder-gray-400 px-4 py-3 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200';
