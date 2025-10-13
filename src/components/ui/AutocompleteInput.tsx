@@ -34,12 +34,10 @@ export default function AutocompleteInput({
         )
       : suggestions; // Mostrar todas las sugerencias si no hay valor
 
-  // Mostrar/ocultar lista cuando hay sugerencias
+  // Resetear highlightedIndex cuando cambia el valor
   useEffect(() => {
-    // Mostrar sugerencias si hay valor o si el campo está enfocado
-    setIsOpen((value.length > 0 || isOpen) && filteredSuggestions.length > 0);
     setHighlightedIndex(-1);
-  }, [value, filteredSuggestions.length, isOpen]);
+  }, [value]);
 
   // Manejar selección de sugerencia
   const handleSuggestionClick = (suggestion: string) => {
