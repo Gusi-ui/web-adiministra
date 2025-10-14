@@ -119,7 +119,7 @@ export const getActivities = async (): Promise<Activity[]> => {
       `
       )
       .order('created_at', { ascending: false })
-      .limit(6);
+      .limit(7);
 
     if (error !== null) {
       logger.error('Error al obtener actividades', error);

@@ -36,6 +36,12 @@ export default function Navigation({ variant = 'mobile' }: NavigationProps) {
       mobileIcon: '📅',
     },
     {
+      href: '/planning/routes',
+      icon: '🗺️',
+      label: 'Rutas',
+      mobileIcon: '🗺️',
+    },
+    {
       href: '/balances',
       icon: '⏰',
       label: 'Balance de Horas',

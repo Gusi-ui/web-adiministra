@@ -558,6 +558,35 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </Link>
+
+                <Link href='/planning/routes' className='block'>
+                  <div className='w-full text-left p-4 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl hover:from-teal-100 hover:to-teal-200 transition-all duration-200 border border-teal-200'>
+                    <div className='flex items-center space-x-3'>
+                      <span className='text-2xl'>🗺️</span>
+                      <div className='flex-1'>
+                        <p className='font-semibold text-gray-900'>
+                          Rutas de Trabajadoras
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          Consultar rutas y tiempos de desplazamiento
+                        </p>
+                      </div>
+                      <svg
+                        className='w-5 h-5 text-teal-600'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M9 5l7 7-7 7'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
               </div>
             </div>
 
@@ -705,7 +734,7 @@ export default function DashboardPage() {
               <h2 className='text-base md:text-lg lg:text-xl font-bold text-gray-900 mb-4'>
                 🔧 Herramientas Adicionales
               </h2>
-              <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4'>
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4'>
                 <Link href='/planning' className='block'>
                   <div className='p-3 md:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200'>
                     <div className='text-center'>
@@ -739,6 +768,32 @@ export default function DashboardPage() {
                       </p>
                       <p className='text-xs md:text-sm text-gray-600'>
                         Ver todas
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href='/planning/routes' className='block'>
+                  <div className='p-3 md:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200'>
+                    <div className='text-center'>
+                      <span className='text-xl md:text-2xl mb-2 block'>🗺️</span>
+                      <p className='text-sm md:text-base font-medium text-gray-900'>
+                        Rutas
+                      </p>
+                      <p className='text-xs md:text-sm text-gray-600'>
+                        Trabajadoras
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+                <Link href='/holidays' className='block'>
+                  <div className='p-3 md:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200'>
+                    <div className='text-center'>
+                      <span className='text-xl md:text-2xl mb-2 block'>🎯</span>
+                      <p className='text-sm md:text-base font-medium text-gray-900'>
+                        Festivos
+                      </p>
+                      <p className='text-xs md:text-sm text-gray-600'>
+                        Gestión
                       </p>
                     </div>
                   </div>
