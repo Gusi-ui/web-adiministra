@@ -135,17 +135,22 @@ export const loadGoogleMapsAPI = (
         const mapsObj = (
           window as unknown as { google?: { maps?: Record<string, unknown> } }
         ).google?.maps;
-        const importLibrary = (
-          mapsObj as { importLibrary?: (name: string) => Promise<unknown> }
-        ).importLibrary;
-        if (
-          typeof importLibrary === 'function' &&
-          mapsObj?.['Map'] === undefined
-        ) {
-          try {
-            await importLibrary('maps');
-          } catch {
-            // Ignorar y seguir intentando hasta timeout
+
+        // Verificar si google.maps existe y tiene importLibrary
+        if (mapsObj && typeof mapsObj === 'object') {
+          const importLibrary = (
+            mapsObj as { importLibrary?: (name: string) => Promise<unknown> }
+          ).importLibrary;
+
+          if (
+            typeof importLibrary === 'function' &&
+            mapsObj?.['Map'] === undefined
+          ) {
+            try {
+              await importLibrary('maps');
+            } catch {
+              // Ignorar y seguir intentando hasta timeout
+            }
           }
         }
 
@@ -156,7 +161,7 @@ export const loadGoogleMapsAPI = (
           clearTimeout(timeoutId);
           reject(
             new Error(
-              'No se pudo inicializar Google Maps API (posible bloqueo por navegador).'
+              'No se pudo inicializar Google Maps API. Verifica que la API key sea válida y que las APIs estén habilitadas en Google Cloud Console.'
             )
           );
         } else {
