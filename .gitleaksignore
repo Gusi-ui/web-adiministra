@@ -4,3 +4,29 @@
 # Configuration files containing example patterns for secret scanning
 .github/secret-scanning.yml
 .github/secret-scanning-patterns.yml
+.github/SECRETS.md
+.github/workflows/README.md
+
+# Example and documentation files
+env.example
+README.md
+docs/**
+
+# Node modules and third-party dependencies
+node_modules/**
+**/node_modules/**
+mobile-app/node_modules/**
+apps/worker-mobile/node_modules/**
+
+# Build and cache directories
+.next/**
+build/**
+dist/**
+out/**
+.cache/**
+
+# Test files
+**/*.test.*
+**/*.spec.*
+tests/**
+__tests__/**

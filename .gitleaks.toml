@@ -1,0 +1,127 @@
+# Gitleaks configuration file
+# Configura el escaneo de secretos para evitar falsos positivos
+
+title = "Gitleaks configuration for web-adiministra"
+
+# Reglas personalizadas para excluir falsos positivos
+[allowlist]
+  description = "Allowlist for false positives"
+
+  # Excluir archivos de configuración y documentación
+  paths = [
+    # Archivos de ejemplo y documentación
+    "env.example",
+    "README.md",
+    ".github/SECRETS.md",
+    ".github/secret-scanning.yml",
+    ".github/secret-scanning-patterns.yml",
+    ".github/workflows/README.md",
+    
+    # Node modules y dependencias de terceros
+    "node_modules/**",
+    "**/node_modules/**",
+    "mobile-app/node_modules/**",
+    "apps/worker-mobile/node_modules/**",
+    
+    # Archivos de build y caché
+    ".next/**",
+    "build/**",
+    "dist/**",
+    "out/**",
+    ".cache/**",
+    
+    # Archivos de test
+    "**/*.test.*",
+    "**/*.spec.*",
+    "tests/**",
+    "__tests__/**",
+    
+    # Archivos de configuración de CI/CD que usan placeholders
+    ".github/workflows/*.yml",
+  ]
+
+  # Patrones de texto que son placeholders conocidos
+  regexes = [
+    # Placeholders comunes en documentación
+    "placeholder",
+    "your_.*_key",
+    "your-.*-key",
+    "example.*key",
+    "test.*key",
+    "demo.*key",
+    "tu-proyecto-id",
+    "your-project-id",
+    
+    # URLs de ejemplo
+    "https://placeholder\\.supabase\\.co",
+    "https://tu-proyecto-id\\.supabase\\.co",
+    "https://your-project-id\\.supabase\\.co",
+    
+    # Valores de ejemplo específicos del proyecto
+    "AIzaSyBvOkBw",  # Ejemplo en env.example
+  ]
+
+  # Commits específicos a excluir (si es necesario)
+  commits = []
+
+  # Detener en el primer secreto encontrado
+  stopwords = []
+
+# Configuración de escaneo
+[extend]
+  # Usar la configuración base de gitleaks
+  useDefault = true
+
+# Configuración de salida
+[[rules]]
+  id = "google-api-key"
+  description = "Google API Key"
+  regex = '''AIzaSy[A-Za-z0-9_-]{35}'''
+  tags = ["key", "google", "api"]
+
+  # Excluir archivos de ejemplo
+  [rules.allowlist]
+    paths = [
+      "env.example",
+      "README.md",
+      ".github/**",
+      "docs/**",
+    ]
+    regexes = [
+      "AIzaSyBvOkBw",  # Ejemplo en env.example
+    ]
+
+[[rules]]
+  id = "jwt-token"
+  description = "JWT Token (Supabase)"
+  regex = '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'''
+  tags = ["key", "jwt", "supabase"]
+
+  # Excluir archivos de ejemplo
+  [rules.allowlist]
+    paths = [
+      "env.example",
+      "README.md",
+      ".github/**",
+      "docs/**",
+    ]
+
+[[rules]]
+  id = "generic-api-key"
+  description = "Generic API Key"
+  regex = '''(?i)(api[_-]?key|apikey)['":\s=]+[A-Za-z0-9_-]{20,}'''
+  tags = ["key", "api"]
+
+  # Excluir archivos de ejemplo
+  [rules.allowlist]
+    paths = [
+      "env.example",
+      "README.md",
+      ".github/**",
+      "docs/**",
+    ]
+    regexes = [
+      "your_.*_key",
+      "placeholder",
+    ]
+
