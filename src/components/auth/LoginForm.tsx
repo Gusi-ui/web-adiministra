@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -8,7 +8,13 @@ import { Button, Input } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    // Cargar email guardado del localStorage
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sad_last_email') || '';
+    }
+    return '';
+  });
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,14 +22,6 @@ export default function LoginForm() {
 
   const { signIn } = useAuth();
   const router = useRouter();
-
-  // Cargar email guardado del localStorage
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('sad_last_email');
-    if (savedEmail !== null) {
-      setEmail(savedEmail);
-    }
-  }, []);
 
   // Validación en tiempo real del email usando useMemo
   const emailError = useMemo(() => {

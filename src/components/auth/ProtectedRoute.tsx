@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 import { useRouter } from 'next/navigation';
 
@@ -19,7 +19,6 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -50,13 +49,20 @@ export default function ProtectedRoute({
         return;
       }
     }
-
-    // Usuario autorizado
-    setIsAuthorized(true);
   }, [user, loading, requiredRole, redirectTo, router]);
 
-  // Mostrar spinner mientras carga o verifica autorización
-  if (loading || isAuthorized === null) {
+  // Derivar estado de autorización de las dependencias
+  const isAuthorized =
+    !loading &&
+    user !== null &&
+    user !== undefined &&
+    (requiredRole === null ||
+      requiredRole === undefined ||
+      user.role === requiredRole ||
+      (user.role === 'super_admin' && requiredRole === 'admin'));
+
+  // Mostrar spinner mientras carga o no está autorizado
+  if (loading || !isAuthorized) {
     return (
       <div className='min-h-screen flex items-center justify-center bg-gray-50'>
         <div className='text-center'>

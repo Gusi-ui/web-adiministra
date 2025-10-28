@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import Link from 'next/link';
 
@@ -99,7 +99,7 @@ export default function BalancesPage() {
   }, []);
 
   // Recalcular balance al seleccionar usuario o cambiar mes/año
-  useMemo(() => {
+  useEffect(() => {
     if (selectedUser === '') return;
     setError(null);
     setBalance(null);
@@ -146,7 +146,7 @@ export default function BalancesPage() {
   }, [selectedUser, currentYear, currentMonth]);
 
   // Recalcular tabla por trabajadora cuando cambia selección o mes/año
-  useMemo(() => {
+  useEffect(() => {
     if (selectedWorker === '') {
       setWorkerRows([]);
       return;
