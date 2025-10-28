@@ -101,8 +101,6 @@ export default function BalancesPage() {
   // Recalcular balance al seleccionar usuario o cambiar mes/año
   useEffect(() => {
     if (selectedUser === '') return;
-    setError(null);
-    setBalance(null);
 
     // Buscar el usuario por nombre completo
     const findUserByName = async () => {
@@ -134,6 +132,8 @@ export default function BalancesPage() {
 
     findUserByName().then(userId => {
       if (userId) {
+        setError(null);
+        setBalance(null);
         computeUserMonthlyBalance(userId, currentYear, currentMonth)
           .then(res => {
             if (res === null)
@@ -148,11 +148,10 @@ export default function BalancesPage() {
   // Recalcular tabla por trabajadora cuando cambia selección o mes/año
   useEffect(() => {
     if (selectedWorker === '') {
-      setWorkerRows([]);
+      // Usar queueMicrotask para evitar setState síncrono
+      queueMicrotask(() => setWorkerRows([]));
       return;
     }
-    setError(null);
-    setWorkerRows([]);
 
     // Buscar la trabajadora por nombre completo
     const findWorkerByName = async () => {
@@ -184,6 +183,8 @@ export default function BalancesPage() {
 
     findWorkerByName().then(workerId => {
       if (workerId) {
+        setError(null);
+        setWorkerRows([]);
         computeWorkerUsersMonthlyBalances(workerId, currentYear, currentMonth)
           .then(rows => setWorkerRows(rows))
           .catch(() => setError('Error calculando balances por trabajadora.'));

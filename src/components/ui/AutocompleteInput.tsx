@@ -25,7 +25,6 @@ export default function AutocompleteInput({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const prevValueRef = useRef(value);
 
   // Filtrar sugerencias basadas en el valor actual
   const filteredSuggestions =
@@ -36,12 +35,9 @@ export default function AutocompleteInput({
       : suggestions; // Mostrar todas las sugerencias si no hay valor
 
   // Resetear highlightedIndex cuando cambia el valor
-  if (prevValueRef.current !== value) {
-    prevValueRef.current = value;
-    if (highlightedIndex !== -1) {
-      setHighlightedIndex(-1);
-    }
-  }
+  useEffect(() => {
+    queueMicrotask(() => setHighlightedIndex(-1));
+  }, [value]);
 
   // Manejar selección de sugerencia
   const handleSuggestionClick = (suggestion: string) => {
