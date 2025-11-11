@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "import-holidays": "tsx scripts/import-holidays-mataro.ts",
+    "add-holidays-2026": "tsx scripts/add-holidays-2026.ts",
     "validate-holidays": "tsx scripts/validate-holidays.ts",
     "test-holidays": "tsx scripts/validate-holidays.ts 2025 validate",
     "prepare": "husky",

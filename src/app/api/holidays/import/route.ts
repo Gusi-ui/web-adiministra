@@ -59,13 +59,15 @@ const determineHolidayType = (
     'Festa del Treball',
     'Sant Joan',
     "L'Assumpció",
-    'Diada Nacional de Catalunya',
     'Tots Sants',
     'Dia de la Constitució',
+    "Festa Nacional d'Espanya",
     'La Immaculada',
     'Nadal',
     'Sant Esteve',
   ];
+
+  const regionalHolidays = ['Diada Nacional de Catalunya'];
 
   const localHolidays = ['Fira a Mataró', 'Festa major de Les Santes'];
 
@@ -73,8 +75,10 @@ const determineHolidayType = (
     return 'national';
   } else if (localHolidays.includes(name)) {
     return 'local';
+  } else if (regionalHolidays.includes(name)) {
+    return 'regional';
   }
-  return 'regional';
+  return 'national'; // Por defecto
 };
 
 const scrapeHolidaysFromMataroWebsite = async (

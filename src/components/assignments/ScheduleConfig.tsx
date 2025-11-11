@@ -87,52 +87,37 @@ export default function ScheduleConfig({
     updatedSchedule[dayKey].totalHours = totalHours;
   };
 
-  // Cargar festivos de Mataró
+  // Cargar festivos de Mataró desde la base de datos
   useEffect(() => {
-    const loadHolidays = () => {
+    const loadHolidays = async () => {
       try {
-        // En producción, esto sería una API call a la base de datos
-        // Por ahora usamos datos hardcodeados de Mataró 2025
-        const mataroHolidays2025 = [
-          { day: 1, month: 1, year: 2025, name: "Cap d'Any" },
-          { day: 6, month: 1, year: 2025, name: 'Reis' },
-          { day: 18, month: 4, year: 2025, name: 'Divendres Sant' },
-          { day: 21, month: 4, year: 2025, name: 'Dilluns de Pasqua Florida' },
-          { day: 1, month: 5, year: 2025, name: 'Festa del Treball' },
-          { day: 9, month: 6, year: 2025, name: 'Fira a Mataró' },
-          { day: 24, month: 6, year: 2025, name: 'Sant Joan' },
-          { day: 28, month: 7, year: 2025, name: 'Festa major de Les Santes' },
-          {
-            day: 15,
-            month: 8,
-            year: 2025,
-            name: "L'Assumpció",
-          },
-          {
-            day: 11,
-            month: 9,
-            year: 2025,
-            name: 'Diada Nacional de Catalunya',
-          },
-          { day: 1, month: 11, year: 2025, name: 'Tots Sants' },
-          { day: 6, month: 12, year: 2025, name: 'Dia de la Constitució' },
-          { day: 8, month: 12, year: 2025, name: 'La Immaculada' },
-          { day: 25, month: 12, year: 2025, name: 'Nadal' },
-          { day: 26, month: 12, year: 2025, name: 'Sant Esteve' },
-        ];
-
-        const monthHolidays = mataroHolidays2025.filter(
-          holiday =>
-            holiday.month === selectedMonth && holiday.year === selectedYear
+        // Importar dinámicamente para evitar problemas de SSR
+        const { getHolidaysForMonth } = await import('@/lib/holidays-query');
+        const holidaysData = await getHolidaysForMonth(
+          selectedMonth,
+          selectedYear
         );
+
+        // Convertir a formato compatible
+        const monthHolidays = holidaysData.map(holiday => ({
+          day: holiday.day,
+          month: holiday.month,
+          year: holiday.year,
+          name: holiday.name,
+        }));
 
         setHolidays(monthHolidays);
       } catch (error) {
         logger.error('Error cargando festivos:', error);
+        // Fallback: mantener array vacío si hay error
+        setHolidays([]);
       }
     };
 
-    loadHolidays();
+    loadHolidays().catch(error => {
+      logger.error('Error en loadHolidays:', error);
+      setHolidays([]);
+    });
   }, [selectedMonth, selectedYear]);
 
   // Calcular horas del mes
