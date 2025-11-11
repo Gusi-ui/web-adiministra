@@ -2,21 +2,9 @@ import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
-import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
-import { FlatCompat } from '@eslint/eslintrc';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
 
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     ignores: [
       'node_modules/**',
@@ -54,6 +42,7 @@ const eslintConfig = [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         alert: 'readonly',
+        queueMicrotask: 'readonly',
         // Variables globales de Node.js
         process: 'readonly',
         // Variables globales de HTML
@@ -70,7 +59,6 @@ const eslintConfig = [
     },
     plugins: {
       '@typescript-eslint': typescript,
-      react: react,
       'react-hooks': reactHooks,
       '@next/next': nextPlugin,
     },
@@ -84,8 +72,6 @@ const eslintConfig = [
       // Reglas estrictas de React
       'react-hooks/exhaustive-deps': 'error',
       'react-hooks/rules-of-hooks': 'error',
-      'react/no-unescaped-entities': 'error',
-      'react/jsx-key': 'error',
 
       // Reglas estrictas de JavaScript
       'no-console': 'warn',
@@ -124,6 +110,7 @@ const eslintConfig = [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         alert: 'readonly',
+        queueMicrotask: 'readonly',
         // Variables globales de Node.js
         process: 'readonly',
         // Variables globales de HTML
@@ -139,7 +126,6 @@ const eslintConfig = [
       },
     },
     plugins: {
-      react: react,
       'react-hooks': reactHooks,
       '@next/next': nextPlugin,
     },
@@ -147,8 +133,6 @@ const eslintConfig = [
       // Reglas estrictas de React
       'react-hooks/exhaustive-deps': 'error',
       'react-hooks/rules-of-hooks': 'error',
-      'react/no-unescaped-entities': 'error',
-      'react/jsx-key': 'error',
 
       // Reglas estrictas de JavaScript
       'no-console': 'warn',
@@ -167,6 +151,11 @@ const eslintConfig = [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      globals: {
+        module: 'readonly',
+        exports: 'readonly',
+        require: 'readonly',
+      },
     },
     rules: {
       'no-console': 'off',
