@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Navigation from '@/components/layout/Navigation';
 import RouteMap from '@/components/route/RouteMap';
 import { Button } from '@/components/ui';
 import { useDashboardUrl } from '@/hooks/useDashboardUrl';
@@ -373,7 +374,7 @@ export default function PlanningRoutesPage() {
         </header>
 
         {/* Contenido Principal */}
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24'>
           {/* Selectores */}
           <div className='bg-white rounded-2xl shadow-sm p-6 mb-6'>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -777,6 +778,9 @@ export default function PlanningRoutesPage() {
             </div>
           )}
         </div>
+
+        {/* Navegación móvil fija */}
+        <Navigation variant='mobile' />
       </div>
     </ProtectedRoute>
   );
