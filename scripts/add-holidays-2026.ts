@@ -12,40 +12,6 @@ interface HolidayData {
   type: 'national' | 'regional' | 'local';
 }
 
-// Nota: Los tipos de festivos están definidos directamente en el array holidays2026
-// Esta función se mantiene como referencia pero no se usa en este script
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const determineHolidayType = (
-  name: string
-): 'national' | 'regional' | 'local' => {
-  const nationalHolidays = [
-    "Cap d'Any",
-    'Reis',
-    'Divendres Sant',
-    'Dilluns de Pasqua Florida',
-    'Festa del Treball',
-    'Sant Joan',
-    "L'Assumpció",
-    "Festa Nacional d'Espanya",
-    'La Immaculada',
-    'Nadal',
-    'Sant Esteve',
-  ];
-
-  const localHolidays = ['Fira a Mataró', 'Festa major de Les Santes'];
-
-  const regionalHolidays = ['Diada Nacional de Catalunya'];
-
-  if (nationalHolidays.includes(name)) {
-    return 'national';
-  } else if (localHolidays.includes(name)) {
-    return 'local';
-  } else if (regionalHolidays.includes(name)) {
-    return 'regional';
-  }
-  return 'national'; // Por defecto
-};
-
 // Festivos de 2026 para Mataró
 const holidays2026: HolidayData[] = [
   { day: 1, month: 1, year: 2026, name: "Cap d'Any", type: 'national' },
