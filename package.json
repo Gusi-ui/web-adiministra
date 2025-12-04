@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev -p 3001",
@@ -20,7 +20,7 @@
     "validate-holidays": "tsx scripts/validate-holidays.ts",
     "test-holidays": "tsx scripts/validate-holidays.ts 2025 validate",
     "prepare": "husky",
-    "postinstall": "npm install --no-save --force lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu && cp node_modules/lightningcss-linux-x64-gnu/lightningcss.linux-x64-gnu.node node_modules/lightningcss/ 2>/dev/null || true && cp node_modules/@tailwindcss/oxide-linux-x64-gnu/tailwindcss-oxide.linux-x64-gnu.node node_modules/@tailwindcss/oxide/ 2>/dev/null || true",
+    "postinstall": "npm install --no-save lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu 2>/dev/null && cp node_modules/lightningcss-linux-x64-gnu/lightningcss.linux-x64-gnu.node node_modules/lightningcss/ 2>/dev/null && cp node_modules/@tailwindcss/oxide-linux-x64-gnu/tailwindcss-oxide.linux-x64-gnu.node node_modules/@tailwindcss/oxide/ 2>/dev/null || true",
     "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/supabase.ts",
     "db:types:watch": "nodemon --watch src --exec 'npm run db:types'",
     "db:pull": "supabase db pull",
