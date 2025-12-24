@@ -134,7 +134,7 @@ jobs:
           echo "3. Configurar secrets faltantes en GitHub" >> health-report.md
 
       - name: Upload health report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: workflow-health-report
           path: health-report.md
