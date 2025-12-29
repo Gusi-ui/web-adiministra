@@ -34,6 +34,21 @@ function sanitizeString(value: unknown): string | null {
   return str;
 }
 
+// Función auxiliar para validar password sin trim (las passwords pueden tener espacios)
+function validatePassword(value: unknown): string | null {
+  // Verificación explícita de tipo y que sea string
+  const isString = typeof value === 'string' && value.constructor === String;
+  if (!isString) return null;
+
+  // Convertir a string primitivo sin trim (las passwords pueden tener espacios)
+  const password = String(value);
+
+  // Retornar null si está vacío
+  if (password.length === 0) return null;
+
+  return password;
+}
+
 const POST = async (req: Request): Promise<Response> => {
   try {
     // Parse del body con manejo de errores
@@ -66,10 +81,12 @@ const POST = async (req: Request): Promise<Response> => {
     // Sanitizar y validar cada campo de forma independiente
     const email = sanitizeString(bodyObj.email);
     const name = sanitizeString(bodyObj.name);
-    const rawPassword = bodyObj.password;
+    const password = validatePassword(bodyObj.password);
 
-    // Validar que todos los campos estén presentes
-    if (email === null || name === null || typeof rawPassword !== 'string') {
+    // Validar que todos los campos estén presentes y sean válidos
+    const allFieldsPresent =
+      email !== null && name !== null && password !== null;
+    if (!allFieldsPresent) {
       return NextResponse.json(
         { success: false, message: 'Campos requeridos faltantes o inválidos' },
         { status: 400 }
@@ -110,8 +127,8 @@ const POST = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validar contraseña (no se hace trim en passwords)
-    const passwordLength = rawPassword.length;
+    // Validar contraseña con longitud específica
+    const passwordLength = password.length;
     const isPasswordValid =
       passwordLength >= PASSWORD_MIN_LENGTH &&
       passwordLength <= PASSWORD_MAX_LENGTH;
@@ -130,7 +147,7 @@ const POST = async (req: Request): Promise<Response> => {
     const result = await ensureWorkerAuthAccount({
       email,
       name,
-      password: rawPassword,
+      password,
     });
 
     const status = result.success ? 200 : 400;
