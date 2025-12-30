@@ -120,9 +120,13 @@ const useSimpleRouteSegments = ({
         setError(null);
 
         try {
-          // Verificar y cargar Google Maps API si es necesario
-          if (!isGoogleMapsAvailable()) {
-            await loadGoogleMapsAPI();
+          // Intentar cargar Google Maps API (opcional - el sistema funciona sin ella)
+          try {
+            if (!isGoogleMapsAvailable()) {
+              await loadGoogleMapsAPI();
+            }
+          } catch {
+            // Google Maps no disponible, el sistema usará estimación local
           }
           // Preparar información de direcciones
 

@@ -1,10 +1,12 @@
 'use client';
 
 import {
-  type TravelTimeResult,
   calculateTravelTime,
+  isGoogleMapsAvailable,
   loadGoogleMapsAPI,
+  type TravelTimeResult,
 } from '@/lib/google-maps';
+import { estimateTravelTime } from '@/lib/travel-time-estimator';
 
 /**
  * Interfaz para el resultado del cálculo de tiempo de viaje real
@@ -14,6 +16,7 @@ export interface RealTravelTimeResult {
   distance: number; // en metros
   success: boolean;
   errorMessage?: string;
+  isEstimated?: boolean; // true si se usó estimación local en vez de Google Maps
 }
 
 export interface AddressInfo {
@@ -21,6 +24,10 @@ export interface AddressInfo {
   postalCode?: string | null;
   city?: string | null;
 }
+
+// Flag para deshabilitar Google Maps Directions API (requiere facturación)
+// Cambiar a false si tienes facturación habilitada en Google Cloud
+const USE_GOOGLE_MAPS_DIRECTIONS = false;
 
 /**
  * Construye una dirección completa a partir de la información disponible
@@ -58,36 +65,59 @@ function buildFullAddress(addressInfo: AddressInfo): string {
 }
 
 /**
- * Calcula el tiempo de viaje real entre dos direcciones usando Google Maps
+ * Calcula el tiempo de viaje usando estimación local (sin Google Maps Directions API)
+ * Esta función NO requiere facturación de Google Cloud
+ */
+function calculateLocalEstimate(
+  fromAddress: AddressInfo,
+  toAddress: AddressInfo,
+  travelMode: 'DRIVING' | 'WALKING' | 'TRANSIT' = 'DRIVING'
+): RealTravelTimeResult {
+  const estimate = estimateTravelTime(fromAddress, toAddress, travelMode);
+
+  return {
+    duration: estimate.estimatedDuration,
+    distance: estimate.estimatedDistance,
+    success: true,
+    isEstimated: true,
+  };
+}
+
+/**
+ * Calcula el tiempo de viaje real entre dos direcciones
+ * Usa estimación local por defecto (no requiere facturación)
+ * Si USE_GOOGLE_MAPS_DIRECTIONS es true, intentará usar Google Maps primero
  */
 export async function calculateRealTravelTime(
   fromAddress: AddressInfo,
   toAddress: AddressInfo,
   travelMode: 'DRIVING' | 'WALKING' | 'TRANSIT' = 'DRIVING'
 ): Promise<RealTravelTimeResult> {
+  // Si Google Maps Directions está deshabilitado, usar estimación local directamente
+  if (!USE_GOOGLE_MAPS_DIRECTIONS) {
+    return calculateLocalEstimate(fromAddress, toAddress, travelMode);
+  }
+
+  // Intentar usar Google Maps Directions API (requiere facturación)
   try {
     await loadGoogleMapsAPI();
+
+    // Verificar si Google Maps está disponible
+    if (!isGoogleMapsAvailable()) {
+      // Fallback a estimación local
+      return calculateLocalEstimate(fromAddress, toAddress, travelMode);
+    }
 
     const fromFullAddress = buildFullAddress(fromAddress);
     const toFullAddress = buildFullAddress(toAddress);
 
     // Validar que las direcciones no estén vacías
     if (!fromFullAddress || fromFullAddress.trim() === 'Mataró, España') {
-      return {
-        duration: 0,
-        distance: 0,
-        success: false,
-        errorMessage: 'Dirección de origen no válida o incompleta',
-      };
+      return calculateLocalEstimate(fromAddress, toAddress, travelMode);
     }
 
     if (!toFullAddress || toFullAddress.trim() === 'Mataró, España') {
-      return {
-        duration: 0,
-        distance: 0,
-        success: false,
-        errorMessage: 'Dirección de destino no válida o incompleta',
-      };
+      return calculateLocalEstimate(fromAddress, toAddress, travelMode);
     }
 
     const result: TravelTimeResult = await calculateTravelTime(
@@ -101,22 +131,15 @@ export async function calculateRealTravelTime(
         duration: result.duration,
         distance: result.distance,
         success: true,
+        isEstimated: false,
       };
     }
-    return {
-      duration: 0,
-      distance: 0,
-      success: false,
-      errorMessage:
-        result.errorMessage ?? 'Error desconocido al calcular tiempo de viaje',
-    };
-  } catch (error) {
-    return {
-      duration: 0,
-      distance: 0,
-      success: false,
-      errorMessage: `Error al cargar Google Maps: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-    };
+
+    // Si Google Maps falla, usar estimación local como fallback
+    return calculateLocalEstimate(fromAddress, toAddress, travelMode);
+  } catch {
+    // Si hay cualquier error con Google Maps, usar estimación local
+    return calculateLocalEstimate(fromAddress, toAddress, travelMode);
   }
 }
 
