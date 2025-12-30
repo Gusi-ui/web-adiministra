@@ -25,9 +25,9 @@ export interface AddressInfo {
   city?: string | null;
 }
 
-// Flag para deshabilitar Google Maps Directions API (requiere facturación)
-// Cambiar a false si tienes facturación habilitada en Google Cloud
-const USE_GOOGLE_MAPS_DIRECTIONS = false;
+// Flag para habilitar Google Maps Directions API (requiere facturación)
+// Cambiar a false si no tienes facturación habilitada en Google Cloud
+const USE_GOOGLE_MAPS_DIRECTIONS = true;
 
 /**
  * Construye una dirección completa a partir de la información disponible
