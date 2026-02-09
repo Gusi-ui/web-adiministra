@@ -41,7 +41,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.93.3",
+    "@supabase/supabase-js": "^2.95.3",
     "@tanstack/react-query": "^5.90.20",
     "autoprefixer": "^10.4.24",
     "class-variance-authority": "^0.7.1",
