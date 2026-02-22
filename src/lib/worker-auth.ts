@@ -35,7 +35,7 @@ export const ensureWorkerAuthAccount = async (
 
   // Estrategia robusta: buscar por email; si existe, actualizar; si no, crear
 
-  let authUserId: string | null = null;
+  let authUserId: string | null;
 
   // Buscar por email (primera página)
   const { data: listData, error: listErr } =

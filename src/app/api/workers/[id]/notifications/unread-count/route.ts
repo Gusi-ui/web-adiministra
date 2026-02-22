@@ -9,7 +9,11 @@ export async function GET(
 ) {
   try {
     const { id: workerId } = await params;
-    const { count, error } = await (supabaseAdmin as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
+    const { count, error } = await (
+      supabaseAdmin as {
+        from: (t: string) => ReturnType<typeof supabaseAdmin.from>;
+      }
+    )
       .from('worker_notifications')
       .select('*', { count: 'exact', head: true })
       .eq('worker_id', workerId)
