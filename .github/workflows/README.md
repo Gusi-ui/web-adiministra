@@ -1,5 +1,14 @@
 # GitHub Actions Workflows
 
+## Avisos del editor (false positives)
+
+Si en VS Code/Cursor ves **"Context access might be invalid"** en:
+
+- **code-scanning.yml** (GITLEAKS_LICENSE)
+- **web-deploy.yml** (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)
+
+es un **falso positivo** de la extensión GitHub Actions: no reconoce secretos personalizados del repo. Los workflows se ejecutan bien en GitHub. Puedes actualizar la extensión o ignorar el aviso.
+
 ## Configuración de Secrets
 
 Para que los workflows funcionen correctamente, necesitas configurar los siguientes secrets en tu repositorio de GitHub:

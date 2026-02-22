@@ -9,6 +9,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Env from secrets; the "Context access might be invalid" warning for VERCEL_* is a known
+    # false positive in the GitHub Actions extension when using custom secrets.
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN || '' }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || '' }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || '' }}
 
     steps:
       - name: Checkout repository
@@ -17,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -49,10 +55,6 @@ jobs:
         run: npm run build
 
       - name: Deploy to Vercel (Production)
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         if: github.ref == 'refs/heads/main' && env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
         uses: amondnet/vercel-action@v41.1.4
         with:
@@ -62,10 +64,6 @@ jobs:
           vercel-args: '--prod'
 
       - name: Deploy to Vercel (Preview)
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         if: github.ref == 'refs/heads/develop' && env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
         uses: amondnet/vercel-action@v41.1.4
         with:

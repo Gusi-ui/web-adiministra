@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { supabase } from '@/lib/database';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { NotificationPriority, NotificationType } from '@/types';
 import type { WorkerNotificationInsert } from '@/types/database-types';
 
@@ -29,7 +29,7 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') ?? '50');
     const offset = parseInt(searchParams.get('offset') ?? '0');
 
-    let query = supabase
+    let query = (supabaseAdmin as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
       .from('worker_notifications')
       .select('*')
       .eq('worker_id', workerId)
@@ -105,9 +105,9 @@ export async function POST(
 
     // Logs de debug removidos por seguridad
 
-    const { data: notification, error } = await supabase
+    const { data: notification, error } = await (supabaseAdmin as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
       .from('worker_notifications')
-      .insert(notificationData)
+      .insert(notificationData as unknown as Record<string, unknown>)
       .select()
       .single();
 
@@ -150,7 +150,7 @@ export async function PATCH(
     const body = (await request.json()) as UpdateNotificationsRequest;
     const { notification_ids: notificationIds } = body;
 
-    let query = supabase
+    let query = (supabaseAdmin as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
       .from('worker_notifications')
       .update({ read_at: new Date().toISOString() })
       .eq('worker_id', workerId);

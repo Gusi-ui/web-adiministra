@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { supabase } from '@/lib/database';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // GET /api/workers/[id]/notifications/unread-count - Obtener conteo de notificaciones no leídas
 export async function GET(
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id: workerId } = await params;
-    const { count, error } = await supabase
+    const { count, error } = await (supabaseAdmin as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
       .from('worker_notifications')
       .select('*', { count: 'exact', head: true })
       .eq('worker_id', workerId)

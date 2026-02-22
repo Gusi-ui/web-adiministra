@@ -255,6 +255,11 @@ El proyecto incluye un sistema completo de CI/CD:
 - **Manual**: `vercel --prod`
 - **URL de producción**: https://web-adiministrador.vercel.app/
 
+## 🔒 Seguridad (Supabase y GitHub)
+
+- **Security Advisor (Supabase)**: RLS, contraseñas comprometidas y comprobaciones en PRs están documentados en [docs/SECURITY-ADVISOR.md](docs/SECURITY-ADVISOR.md).
+- **PR Dependabot ESLint / @eslint/js 10**: por qué no se puede mergear aún y qué hacer cuando los plugins lo soporten: [docs/DEPENDABOT-ESLINT-10.md](docs/DEPENDABOT-ESLINT-10.md).
+
 ## 🔧 Configuración de Workflows
 
 El proyecto incluye validación automática de workflows:

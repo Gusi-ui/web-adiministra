@@ -56,7 +56,7 @@ jobs:
       - name: 'Setup Node.js'
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: 'Install dependencies'
@@ -81,7 +81,7 @@ jobs:
       - name: 'Setup Node.js'
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: 'Install dependencies'
@@ -105,6 +105,10 @@ jobs:
       actions: read
       contents: read
       security-events: write
+    # GITLEAKS_LICENSE is an optional repo secret; "Context access might be invalid" here is a
+    # known false positive in the GitHub Actions extension for custom secrets.
+    env:
+      GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE || '' }}
 
     steps:
       - name: 'Checkout repository'
@@ -116,7 +120,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITLEAKS_LICENSE: ${{ env.GITLEAKS_LICENSE }}
           GITLEAKS_CONFIG: .gitleaks.toml
         continue-on-error: true
 
