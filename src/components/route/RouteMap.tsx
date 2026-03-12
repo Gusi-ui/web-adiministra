@@ -27,11 +27,15 @@ interface RouteMapProps {
     postalCode?: string | null;
     city?: string | null;
   } | null;
+  workerName?: string;
+  date?: string;
 }
 
 const RouteMap = ({
   routeStops,
   workerInfo,
+  workerName = 'Trabajadora',
+  date,
 }: RouteMapProps): React.JSX.Element => {
   const [travelMode, setTravelMode] = useState<
     'DRIVING' | 'WALKING' | 'TRANSIT'
@@ -41,6 +45,7 @@ const RouteMap = ({
     return saved === 'WALKING' || saved === 'TRANSIT' ? saved : 'DRIVING';
   });
 
+  const [showStopsList, setShowStopsList] = useState(true);
   const [showSegmentDetails, setShowSegmentDetails] = useState(false);
   const [showExportSummary, setShowExportSummary] = useState(false);
 
@@ -83,6 +88,10 @@ const RouteMap = ({
     }
   };
 
+  const handleToggleStopsList = () => {
+    setShowStopsList(!showStopsList);
+  };
+
   const handleToggleSegmentDetails = () => {
     setShowSegmentDetails(!showSegmentDetails);
   };
@@ -101,6 +110,48 @@ const RouteMap = ({
 
   return (
     <div className='w-full space-y-4'>
+      {/* Panel de paradas numeradas */}
+      <div className='bg-white rounded-lg border border-gray-200'>
+        <button
+          onClick={handleToggleStopsList}
+          className='w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors'
+        >
+          <h3 className='text-sm font-semibold text-gray-900'>
+            📍 Paradas ({routeStops.length})
+          </h3>
+          <span className='text-gray-400 text-xs'>
+            {showStopsList ? '▲ Ocultar' : '▼ Mostrar'}
+          </span>
+        </button>
+        {showStopsList && (
+          <div className='px-4 pb-4 space-y-2'>
+            {routeStops.map((stop, index) => (
+              <div
+                key={`${stop.assignmentId}-${index}`}
+                className='flex items-start gap-3'
+              >
+                <div className='flex-shrink-0 w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5'>
+                  {index + 1}
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <p className='text-sm font-medium text-gray-900 truncate'>
+                    {stop.userLabel}
+                  </p>
+                  <p className='text-xs text-gray-500'>
+                    {stop.start} – {stop.end}
+                    {stop.address != null && stop.address !== '' && (
+                      <span className='ml-2 text-gray-400 truncate'>
+                        · {stop.address}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Controles de modo de viaje - Sin label para mejor legibilidad */}
       <div className='flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg'>
         <div className='flex items-center gap-2'>
@@ -238,11 +289,9 @@ const RouteMap = ({
       {showExportSummary && (
         <RouteExportSummary
           segments={segments}
-          workerName='Rosa María Robles'
-          date={new Date().toLocaleDateString('es-ES')}
-          onExport={() => {
-            // Exportar en formato especificado
-          }}
+          workerName={workerName}
+          date={date ?? new Date().toLocaleDateString('es-ES')}
+          confidence={confidence}
         />
       )}
 
@@ -252,7 +301,7 @@ const RouteMap = ({
           Información del sistema
         </h3>
         <div className='text-sm text-blue-700 space-y-1'>
-          <p>• Trabajadora: Rosa María Robles</p>
+          <p>• Trabajadora: {workerName}</p>
           <p>• Total de paradas: {routeStops.length}</p>
           <p>
             • Modo de viaje:{' '}
@@ -262,7 +311,14 @@ const RouteMap = ({
                 ? 'Caminar'
                 : 'Transporte público'}
           </p>
-          <p>• Cálculos basados en Google Maps API en tiempo real</p>
+          <p>
+            • Origen de datos:{' '}
+            {confidence === 'high'
+              ? 'Google Maps API (tiempo real)'
+              : confidence === 'medium'
+                ? 'Estimación parcial con Google Maps'
+                : 'Estimación local (sin API)'}
+          </p>
         </div>
       </div>
     </div>

@@ -5,12 +5,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import AnnualSummary from '@/components/balances/AnnualSummary';
+import BalanceChart, {
+  type BalanceChartMonth,
+} from '@/components/balances/BalanceChart';
 import { Button, Card } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/database';
 import {
   type UserMonthlyBalance,
+  computeUserAnnualBalance,
   computeUserMonthlyBalance,
+  type UserAnnualMonthRow,
 } from '@/lib/user-calculations';
 
 type WorkerUserBalanceRow = {
@@ -36,6 +42,12 @@ export default function WorkerBalancesPage(): React.JSX.Element {
   const [rows, setRows] = useState<WorkerUserBalanceRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [annualRows, setAnnualRows] = useState<UserAnnualMonthRow[]>([]);
+  const [annualLoading, setAnnualLoading] = useState(false);
+  const [showAnnual, setShowAnnual] = useState(false);
+  const [workerIdForAnnual, setWorkerIdForAnnual] = useState<string | null>(
+    null
+  );
 
   const monthName = useMemo(() => {
     const d = new Date(currentYear, currentMonth - 1, 1);
@@ -83,6 +95,7 @@ export default function WorkerBalancesPage(): React.JSX.Element {
         }
         const workerId =
           typeof wdata.id === 'string' ? wdata.id : String(wdata.id);
+        setWorkerIdForAnnual(workerId);
 
         // 2) Obtener usuarios asignados a esta trabajadora en el mes (para listarlos)
         const start = new Date(currentYear, currentMonth - 1, 1)
@@ -186,6 +199,25 @@ export default function WorkerBalancesPage(): React.JSX.Element {
     load();
   }, [currentUser?.email, currentYear, currentMonth]);
 
+  // Cargar balance anual para el gráfico cuando se activa
+  useEffect(() => {
+    if (!showAnnual || workerIdForAnnual === null) return;
+    // Para el gráfico de la trabajadora, calculamos el balance del primer usuario
+    // (o un balance agregado). Aquí calculamos por usuario el primero disponible.
+    setAnnualLoading(true);
+    setAnnualRows([]);
+    // Usar el primer userId de las rows para el gráfico individual
+    const firstUserId = rows[0]?.userId;
+    if (firstUserId === undefined) {
+      setAnnualLoading(false);
+      return;
+    }
+    computeUserAnnualBalance(firstUserId, currentYear)
+      .then(r => setAnnualRows(r))
+      .catch(() => setAnnualRows([]))
+      .finally(() => setAnnualLoading(false));
+  }, [showAnnual, workerIdForAnnual, currentYear, rows]);
+
   const totals = useMemo(() => {
     const assigned = rows.reduce((a, r) => a + r.assignedMonthlyHours, 0);
     const total = rows.reduce((a, r) => a + r.theoreticalMonthlyHours, 0);
@@ -284,6 +316,75 @@ export default function WorkerBalancesPage(): React.JSX.Element {
           {error !== null && (
             <div className='mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-sm'>
               {error}
+            </div>
+          )}
+
+          {/* Banner de déficit acumulado */}
+          {totals.diff <= -5 && (
+            <div
+              className={`mb-4 rounded-lg border px-4 py-3 flex items-start gap-3 ${
+                totals.diff <= -10
+                  ? 'bg-red-50 border-red-300 text-red-800'
+                  : 'bg-amber-50 border-amber-300 text-amber-800'
+              }`}
+            >
+              <span className='text-lg flex-shrink-0'>
+                {totals.diff <= -10 ? '🔴' : '🟡'}
+              </span>
+              <div>
+                <p className='font-semibold text-sm'>
+                  {totals.diff <= -10
+                    ? 'Déficit crítico de horas'
+                    : 'Déficit de horas este mes'}
+                </p>
+                <p className='text-xs mt-0.5'>
+                  Llevas {formatDifference(totals.diff)} en {monthName}{' '}
+                  {currentYear}. Contacta con tu supervisor si tienes dudas.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Botón de resumen anual + gráfico */}
+          {workerIdForAnnual !== null && (
+            <div className='mb-4 space-y-4'>
+              <Button
+                variant='outline'
+                onClick={() => setShowAnnual(!showAnnual)}
+                className='text-sm'
+              >
+                {showAnnual ? '▲ Ocultar' : '📅 Ver'} evolución anual{' '}
+                {currentYear}
+              </Button>
+
+              {showAnnual && (
+                <>
+                  {annualLoading ? (
+                    <div className='bg-white rounded-xl border border-gray-200 p-8 text-center'>
+                      <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2' />
+                      <p className='text-sm text-gray-600'>
+                        Calculando evolución anual...
+                      </p>
+                    </div>
+                  ) : annualRows.length > 0 ? (
+                    <>
+                      <BalanceChart
+                        data={
+                          annualRows.map(r => ({
+                            month: r.month,
+                            laborables: r.laborables,
+                            holidays: r.holidays,
+                            assigned: r.assigned,
+                            cumulative: r.cumulative,
+                          })) satisfies BalanceChartMonth[]
+                        }
+                        title={`Evolución mensual ${currentYear}`}
+                      />
+                      <AnnualSummary rows={annualRows} year={currentYear} />
+                    </>
+                  ) : null}
+                </>
+              )}
             </div>
           )}
 
@@ -433,6 +534,16 @@ export default function WorkerBalancesPage(): React.JSX.Element {
                           >
                             {formatDifference(row.difference)}
                           </span>
+                          {row.difference <= -10 && (
+                            <span className='ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700'>
+                              Crítico
+                            </span>
+                          )}
+                          {row.difference > -10 && row.difference <= -5 && (
+                            <span className='ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700'>
+                              Déficit
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))

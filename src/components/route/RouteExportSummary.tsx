@@ -12,13 +12,26 @@ interface RouteExportSummaryProps {
   segments: RouteSegment[];
   workerName?: string;
   date?: string;
+  confidence?: 'high' | 'medium' | 'low';
   onExport?: (format: 'pdf' | 'csv' | 'json') => void;
 }
+
+const getDataSourceLabel = (conf: 'high' | 'medium' | 'low'): string => {
+  switch (conf) {
+    case 'high':
+      return 'Google Maps API';
+    case 'medium':
+      return 'Parcial (Google Maps + estimación)';
+    default:
+      return 'Estimación local';
+  }
+};
 
 const RouteExportSummary = ({
   segments,
   workerName = 'Trabajadora',
   date = new Date().toLocaleDateString('es-ES'),
+  confidence = 'medium',
   onExport,
 }: RouteExportSummaryProps): React.JSX.Element => {
   const totalBillableTime = segments.reduce(
@@ -55,20 +68,29 @@ const RouteExportSummary = ({
       'Segmento',
       'Desde',
       'Hasta',
+      'Dirección origen',
+      'Dirección destino',
       'Modo de Transporte',
       'Duración (min)',
       'Distancia (m)',
+      'Distancia (km)',
       'Tiempo Facturable (min)',
+      'Origen de datos',
     ];
 
+    const dataSource = getDataSourceLabel(confidence);
     const rows = segments.map((segment, index) => [
       (index + 1).toString(),
       segment.from,
       segment.to,
+      segment.fromAddress ?? '',
+      segment.toAddress ?? '',
       getTravelModeText(segment.travelMode),
       Math.round(segment.duration / 60).toString(),
       segment.distance.toString(),
+      (segment.distance / 1000).toFixed(2),
       segment.billableTime.toString(),
+      dataSource,
     ]);
 
     const csvContent = [headers, ...rows]
@@ -178,6 +200,7 @@ const RouteExportSummary = ({
             <p><strong>Total de segmentos:</strong> ${segments.length}</p>
             <p><strong>Distancia total:</strong> ${formatDistance(totalDistance)}</p>
             <p><strong>Tiempo facturable total:</strong> ${Math.floor(totalBillableTime / 60)}h ${totalBillableTime % 60}min</p>
+            <p><strong>Origen de datos:</strong> ${getDataSourceLabel(confidence)}</p>
           </div>
 
           <div class='segments'>
@@ -189,7 +212,7 @@ const RouteExportSummary = ({
                 <div class='segment-header'>Segmento ${index + 1}: ${segment.from} → ${segment.to}</div>
                 <div class='segment-details'>
                   <div><strong>Modo:</strong> ${getTravelModeText(segment.travelMode)}</div>
-                  <div><strong>Duración:</strong> ${Math.round(segment.duration / 60)} min</div>
+                  <div><strong>Duración real:</strong> ${Math.round(segment.duration / 60)} min</div>
                   <div><strong>Distancia:</strong> ${formatDistance(segment.distance)}</div>
                   <div><strong>Tiempo facturable:</strong> ${segment.billableTime} min</div>
                 </div>
@@ -241,6 +264,17 @@ const RouteExportSummary = ({
               {Math.floor(totalBillableTime / 60)}h {totalBillableTime % 60}min
             </div>
             <div className='text-xs text-gray-500'>Tiempo total</div>
+            <div
+              className={`text-xs mt-1 px-2 py-0.5 rounded-full inline-block ${
+                confidence === 'high'
+                  ? 'bg-green-100 text-green-700'
+                  : confidence === 'medium'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {getDataSourceLabel(confidence)}
+            </div>
           </div>
         </div>
       </div>

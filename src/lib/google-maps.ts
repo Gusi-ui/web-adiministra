@@ -26,38 +26,12 @@ declare global {
           isEmpty: () => boolean;
         };
         Size?: new (width: number, height: number) => unknown;
-        DirectionsService?: new () => {
-          route: (
-            request: {
-              origin: { lat: number; lng: number } | string;
-              destination: string | { lat: number; lng: number };
-              waypoints?: Array<{
-                location: string | { lat: number; lng: number };
-              }>;
-              travelMode: unknown;
-              optimizeWaypoints?: boolean;
-              provideRouteAlternatives?: boolean;
-            },
-            callback: (
-              result: {
-                routes?: Array<{
-                  legs?: Array<{
-                    duration?: { value?: number };
-                    distance?: { value?: number };
-                  }>;
-                }>;
-              } | null,
-              status: unknown
-            ) => void
-          ) => void;
-        };
         DirectionsRenderer?: new (options?: { suppressMarkers?: boolean }) => {
           setMap: (map: unknown) => void;
           setPanel: (panel: HTMLElement) => void;
           setDirections: (directions: unknown) => void;
         };
-        TravelMode?: { DRIVING: unknown; WALKING: unknown; TRANSIT: unknown };
-        DirectionsStatus?: { OK: unknown };
+        importLibrary?: (libraryName: string) => Promise<unknown>;
       };
     };
     initMap?: () => void;
@@ -448,6 +422,13 @@ export const getGoogleMapsDiagnostics = () => {
   };
 };
 
+interface RoutesResponse {
+  routes?: Array<{
+    duration?: string | { seconds: number | string };
+    distanceMeters?: number;
+  }>;
+}
+
 // Interfaz para el resultado del cálculo de tiempo de viaje
 export interface TravelTimeResult {
   duration: number; // en segundos
@@ -456,127 +437,125 @@ export interface TravelTimeResult {
   errorMessage?: string;
 }
 
-// Calcular tiempo de viaje real entre dos direcciones usando Google Maps Directions API
-export const calculateTravelTime = (
+// Calcular tiempo de viaje real entre dos direcciones usando Google Maps Routes API v2 (REST)
+export const calculateTravelTime = async (
   fromAddress: string,
   toAddress: string,
   travelMode: 'DRIVING' | 'WALKING' | 'TRANSIT' = 'DRIVING'
-): Promise<TravelTimeResult> =>
-  new Promise(resolve => {
-    if (!isGoogleMapsAvailable()) {
-      resolve({
-        duration: 0,
-        distance: 0,
-        status: 'ERROR',
-        errorMessage: 'Google Maps API no disponible',
-      });
-      return;
-    }
+): Promise<TravelTimeResult> => {
+  if (!isGoogleMapsAvailable()) {
+    return {
+      duration: 0,
+      distance: 0,
+      status: 'ERROR',
+      errorMessage: 'Google Maps API no disponible',
+    };
+  }
 
-    // Timeout para evitar llamadas colgadas
-    const timeoutId = setTimeout(() => {
-      resolve({
-        duration: 0,
-        distance: 0,
-        status: 'ERROR',
-        errorMessage:
-          'Timeout al calcular ruta - la API tardó demasiado en responder',
-      });
-    }, 10000); // 10 segundos de timeout
+  const apiKey = process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'];
+  if (!apiKey || apiKey === 'your_google_maps_api_key') {
+    return {
+      duration: 0,
+      distance: 0,
+      status: 'ERROR',
+      errorMessage: 'API key de Google Maps no configurada',
+    };
+  }
 
-    if (!window.google?.maps?.DirectionsService) {
-      resolve({
-        duration: 0,
-        distance: 0,
-        status: 'ERROR',
-        errorMessage: 'Google Maps DirectionsService no está disponible',
-      });
-      return;
-    }
-    const directionsService = new window.google.maps.DirectionsService();
+  // Routes API v2 usa DRIVE / WALK / TRANSIT (no DRIVING / WALKING)
+  const travelModeMap: Record<string, string> = {
+    DRIVING: 'DRIVE',
+    WALKING: 'WALK',
+    TRANSIT: 'TRANSIT',
+  };
+  const routesTravelMode = travelModeMap[travelMode] ?? 'DRIVE';
 
-    // Mapear el modo de transporte al enum de Google Maps
-    if (!window.google?.maps?.TravelMode) {
-      resolve({
-        duration: 0,
-        distance: 0,
-        status: 'ERROR',
-        errorMessage: 'Google Maps TravelMode no está disponible',
-      });
-      return;
-    }
+  const timeoutPromise = new Promise<TravelTimeResult>(resolve =>
+    setTimeout(
+      () =>
+        resolve({
+          duration: 0,
+          distance: 0,
+          status: 'ERROR',
+          errorMessage:
+            'Timeout al calcular ruta - la API tardó demasiado en responder',
+        }),
+      10000
+    )
+  );
 
-    let googleTravelMode;
-    switch (travelMode) {
-      case 'WALKING':
-        googleTravelMode = window.google.maps.TravelMode.WALKING;
-        break;
-      case 'TRANSIT':
-        googleTravelMode = window.google.maps.TravelMode.TRANSIT;
-        break;
-      case 'DRIVING':
-      default:
-        googleTravelMode = window.google.maps.TravelMode.DRIVING;
-        break;
-    }
-
-    directionsService.route(
-      {
-        origin: fromAddress,
-        destination: toAddress,
-        travelMode: googleTravelMode,
-        optimizeWaypoints: false,
-        provideRouteAlternatives: false,
-      },
-      (result, status) => {
-        clearTimeout(timeoutId); // Limpiar timeout si la respuesta llega a tiempo
-
-        if (!window.google?.maps?.DirectionsStatus) {
-          resolve({
-            duration: 0,
-            distance: 0,
-            status: 'ERROR',
-            errorMessage: 'Google Maps DirectionsStatus no está disponible',
-          });
-          return;
+  const fetchPromise = (async (): Promise<TravelTimeResult> => {
+    try {
+      const response = await fetch(
+        'https://routes.googleapis.com/directions/v2:computeRoutes',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': apiKey,
+            'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters',
+          },
+          body: JSON.stringify({
+            origin: { address: fromAddress },
+            destination: { address: toAddress },
+            travelMode: routesTravelMode,
+          }),
         }
+      );
 
-        if (
-          status === window.google.maps.DirectionsStatus.OK &&
-          result &&
-          'routes' in result &&
-          result.routes?.[0]
-        ) {
-          const route = result.routes[0];
-          const leg = route.legs?.[0];
-          if (
-            leg?.duration?.value != null &&
-            leg.duration.value > 0 &&
-            leg?.distance?.value != null &&
-            leg.distance.value > 0
-          ) {
-            resolve({
-              duration: leg.duration.value,
-              distance: leg.distance.value,
-              status: 'OK',
-            });
-          } else {
-            resolve({
-              duration: 0,
-              distance: 0,
-              status: 'ERROR',
-              errorMessage:
-                'No se pudo obtener información de duración o distancia',
-            });
-          }
-        } else {
-          resolve({
-            duration: 0,
-            distance: 0,
-            status: 'ERROR',
-            errorMessage: `Error en Directions API: ${String(status)}`,
-          });
-        }
+      if (!response.ok) {
+        return {
+          duration: 0,
+          distance: 0,
+          status: 'ERROR',
+          errorMessage: `Error HTTP ${response.status} en Routes API`,
+        };
       }
-    );
-  });
+
+      const data = (await response.json()) as RoutesResponse;
+      const route = data.routes?.[0];
+      if (!route) {
+        return {
+          duration: 0,
+          distance: 0,
+          status: 'ERROR',
+          errorMessage: 'No se encontró ninguna ruta',
+        };
+      }
+
+      // duration llega como "1234s" (proto-JSON Duration) o { seconds: number }
+      let durationSeconds = 0;
+      if (typeof route.duration === 'string') {
+        durationSeconds = parseInt(route.duration.replace(/[^0-9]/g, ''), 10);
+      } else if (route.duration != null && 'seconds' in route.duration) {
+        durationSeconds = Number(route.duration.seconds);
+      }
+
+      const distanceMeters = route.distanceMeters ?? 0;
+
+      if (durationSeconds > 0 && distanceMeters > 0) {
+        return {
+          duration: durationSeconds,
+          distance: distanceMeters,
+          status: 'OK',
+        };
+      }
+
+      return {
+        duration: 0,
+        distance: 0,
+        status: 'ERROR',
+        errorMessage: 'No se pudo obtener información de duración o distancia',
+      };
+    } catch (err) {
+      return {
+        duration: 0,
+        distance: 0,
+        status: 'ERROR',
+        errorMessage: `Error en Routes API: ${String(err)}`,
+      };
+    }
+  })();
+
+  return Promise.race([fetchPromise, timeoutPromise]);
+};

@@ -328,7 +328,7 @@ export function useNotifications(
 
     const interval = setInterval(() => {
       void loadUnreadCount();
-    }, 10000); // Reducido de 30s a 10s para mejor respuesta
+    }, 30000); // Polling de respaldo cada 30s (Supabase realtime es el canal principal)
 
     return () => clearInterval(interval);
   }, [autoRefresh, user?.id, loadUnreadCount]);
