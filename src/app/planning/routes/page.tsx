@@ -773,7 +773,16 @@ export default function PlanningRoutesPage() {
                 <h2 className='text-lg font-bold text-gray-900 mb-4'>
                   🗺️ Visualización del Mapa
                 </h2>
-                <RouteMap routeStops={allRouteStops} workerInfo={workerInfo} />
+                <RouteMap
+                  routeStops={allRouteStops}
+                  workerInfo={workerInfo}
+                  workerName={
+                    selectedWorker
+                      ? `${selectedWorker.name} ${selectedWorker.surname}`.trim()
+                      : undefined
+                  }
+                  date={new Date(selectedDate).toLocaleDateString('es-ES')}
+                />
               </div>
             </div>
           )}

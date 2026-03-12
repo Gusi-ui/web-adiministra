@@ -20,10 +20,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Balance', href: '/worker-dashboard/balances', icon: '⏱️' },
 ];
 
-// Componente separado para manejar las notificaciones
-function NotificationBadge({ href }: { href: string }) {
-  const { unreadCount } = useNotifications({ autoRefresh: false });
-
+// Componente separado para renderizar el badge (sin lógica de datos)
+function NotificationBadge({
+  href,
+  unreadCount,
+}: {
+  href: string;
+  unreadCount: number;
+}) {
   if (href === '/worker-dashboard' && unreadCount > 0) {
     return (
       <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-sm border-2 border-white'>
@@ -36,6 +40,7 @@ function NotificationBadge({ href }: { href: string }) {
 
 export default function WorkerBottomNav(): React.JSX.Element {
   const pathname = usePathname();
+  const { unreadCount } = useNotifications({ autoRefresh: true, limit: 1 });
 
   const isActive = (href: string): boolean => {
     if (href === '/worker-dashboard') return pathname === '/worker-dashboard';
@@ -78,7 +83,10 @@ export default function WorkerBottomNav(): React.JSX.Element {
               >
                 <span className='text-3xl relative'>
                   {item.icon}
-                  <NotificationBadge href={item.href} />
+                  <NotificationBadge
+                    href={item.href}
+                    unreadCount={unreadCount}
+                  />
                 </span>
               </Link>
             );
@@ -109,7 +117,10 @@ export default function WorkerBottomNav(): React.JSX.Element {
               >
                 <span className='text-2xl leading-none relative'>
                   {item.icon}
-                  <NotificationBadge href={item.href} />
+                  <NotificationBadge
+                    href={item.href}
+                    unreadCount={unreadCount}
+                  />
                 </span>
                 <span className='mt-1 text-[10px] font-medium tracking-wide'>
                   {item.label}
@@ -143,7 +154,10 @@ export default function WorkerBottomNav(): React.JSX.Element {
               >
                 <span className='text-xl relative'>
                   {item.icon}
-                  <NotificationBadge href={item.href} />
+                  <NotificationBadge
+                    href={item.href}
+                    unreadCount={unreadCount}
+                  />
                 </span>
                 <span className='text-sm font-medium'>{item.label}</span>
               </Link>

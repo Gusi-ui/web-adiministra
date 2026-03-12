@@ -372,6 +372,46 @@ export const computeUserMonthlyBalance = async (
   };
 };
 
+// ==========================================================================
+// Balance anual: todos los meses del año para un usuario
+// ==========================================================================
+
+export interface UserAnnualMonthRow {
+  month: number; // 1-12
+  assigned: number;
+  theoretical: number;
+  laborables: number;
+  holidays: number;
+  difference: number; // theoretical - assigned for this month
+  cumulative: number; // running total of difference from Jan
+}
+
+export const computeUserAnnualBalance = async (
+  userId: string,
+  year: number
+): Promise<UserAnnualMonthRow[]> => {
+  const results = await Promise.all(
+    Array.from({ length: 12 }, (_, i) =>
+      computeUserMonthlyBalance(userId, year, i + 1)
+    )
+  );
+
+  let cumulative = 0;
+  return results.map((bal, i) => {
+    const diff = bal?.difference ?? 0;
+    cumulative += diff;
+    return {
+      month: i + 1,
+      assigned: bal?.assignedMonthlyHours ?? 0,
+      theoretical: bal?.theoreticalMonthlyHours ?? 0,
+      laborables: bal?.laborablesMonthlyHours ?? 0,
+      holidays: bal?.holidaysMonthlyHours ?? 0,
+      difference: diff,
+      cumulative,
+    };
+  });
+};
+
 export const computeUserMonthlyBalanceByName = async (
   name: string,
   surname: string,

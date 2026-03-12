@@ -6,12 +6,16 @@ import Link from 'next/link';
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Navigation from '@/components/layout/Navigation';
+import AnnualSummary from '@/components/balances/AnnualSummary';
+import BalanceChart from '@/components/balances/BalanceChart';
 import { AutocompleteInput, Button, Card } from '@/components/ui';
 import { useDashboardUrl } from '@/hooks/useDashboardUrl';
 import { supabase } from '@/lib/database';
 import {
+  computeUserAnnualBalance,
   computeUserMonthlyBalance,
   computeWorkerUsersMonthlyBalances,
+  type UserAnnualMonthRow,
   type UserMonthlyBalance,
   type WorkerUserMonthlyBalanceRow,
 } from '@/lib/user-calculations';
@@ -32,6 +36,10 @@ export default function BalancesPage() {
   const [workerRows, setWorkerRows] = useState<WorkerUserMonthlyBalanceRow[]>(
     []
   );
+  const [annualRows, setAnnualRows] = useState<UserAnnualMonthRow[]>([]);
+  const [annualLoading, setAnnualLoading] = useState(false);
+  const [showAnnual, setShowAnnual] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   // Eliminado loading no usado por ahora (se puede reintroducir con un spinner)
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +63,21 @@ export default function BalancesPage() {
   const clearFilters = (): void => {
     setSelectedWorker('');
     setSelectedUser('');
+    setSelectedUserId(null);
+    setAnnualRows([]);
+    setShowAnnual(false);
   };
+
+  // Cargar resumen anual cuando se activa
+  useEffect(() => {
+    if (!showAnnual || selectedUserId === null) return;
+    setAnnualLoading(true);
+    setAnnualRows([]);
+    computeUserAnnualBalance(selectedUserId, currentYear)
+      .then(rows => setAnnualRows(rows))
+      .catch(() => setAnnualRows([]))
+      .finally(() => setAnnualLoading(false));
+  }, [showAnnual, selectedUserId, currentYear]);
 
   // Cargar listas de trabajadoras y usuarios para autocompletado
   useMemo(() => {
@@ -134,6 +156,8 @@ export default function BalancesPage() {
       if (userId) {
         setError(null);
         setBalance(null);
+        setSelectedUserId(userId);
+        setAnnualRows([]);
         computeUserMonthlyBalance(userId, currentYear, currentMonth)
           .then(res => {
             if (res === null)
@@ -411,6 +435,81 @@ export default function BalancesPage() {
             </Card>
           </div>
 
+          {/* Alerta de déficit */}
+          {balance !== null && balance.difference <= -5 && (
+            <div
+              className={`mb-4 rounded-lg border px-4 py-3 flex items-start gap-3 ${
+                balance.difference <= -10
+                  ? 'bg-red-50 border-red-300 text-red-800'
+                  : 'bg-amber-50 border-amber-300 text-amber-800'
+              }`}
+            >
+              <span className='text-lg'>
+                {balance.difference <= -10 ? '🔴' : '🟡'}
+              </span>
+              <div>
+                <p className='font-medium text-sm'>
+                  {balance.difference <= -10
+                    ? 'Déficit crítico de horas'
+                    : 'Déficit de horas'}
+                </p>
+                <p className='text-xs mt-0.5'>
+                  {formatDifference(balance.difference)} en {monthName}{' '}
+                  {currentYear}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Gráfico + Resumen anual (solo cuando hay usuario seleccionado) */}
+          {selectedUserId !== null && (
+            <div className='mb-6 space-y-4'>
+              {/* Botón para mostrar/ocultar resumen anual */}
+              <div className='flex items-center gap-3'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setShowAnnual(!showAnnual)}
+                  className='text-xs'
+                >
+                  {showAnnual ? '▲ Ocultar' : '📅 Ver'} resumen anual{' '}
+                  {currentYear}
+                </Button>
+              </div>
+
+              {showAnnual && (
+                <>
+                  {annualLoading ? (
+                    <div className='bg-white rounded-xl border border-gray-200 p-8 text-center'>
+                      <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2' />
+                      <p className='text-sm text-gray-600'>
+                        Calculando balance anual...
+                      </p>
+                    </div>
+                  ) : annualRows.length > 0 ? (
+                    <>
+                      <BalanceChart
+                        data={annualRows.map(r => ({
+                          month: r.month,
+                          laborables: r.laborables,
+                          holidays: r.holidays,
+                          assigned: r.assigned,
+                          cumulative: r.cumulative,
+                        }))}
+                        title={`Evolución mensual ${currentYear} — ${selectedUser}`}
+                      />
+                      <AnnualSummary
+                        rows={annualRows}
+                        year={currentYear}
+                        userName={selectedUser}
+                      />
+                    </>
+                  ) : null}
+                </>
+              )}
+            </div>
+          )}
+
           {/* Tabla y lista responsive */}
           <Card className='overflow-hidden'>
             <div className='px-4 lg:px-6 py-4 border-b border-gray-200'>
@@ -594,6 +693,16 @@ export default function BalancesPage() {
                           >
                             {formatDifference(row.difference)}
                           </span>
+                          {row.difference <= -10 && (
+                            <span className='ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700'>
+                              Crítico
+                            </span>
+                          )}
+                          {row.difference > -10 && row.difference <= -5 && (
+                            <span className='ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700'>
+                              Déficit
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))
