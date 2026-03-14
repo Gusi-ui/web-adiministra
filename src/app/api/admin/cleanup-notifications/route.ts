@@ -3,21 +3,21 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 /**
- * POST /api/admin/cleanup-notifications
+ * GET  /api/admin/cleanup-notifications  ← invocado por Vercel Cron Job
+ * POST /api/admin/cleanup-notifications  ← invocación manual
  *
- * Deletes all expired worker_notifications rows.
- * Intended as a fallback trigger when pg_cron is unavailable
- * (e.g. Supabase free tier). Can be called from a Vercel cron
- * job or GitHub Actions scheduled workflow.
+ * Elimina todas las filas de worker_notifications con expires_at en el pasado.
+ * Alternativa a pg_cron para entornos con Supabase Free.
  *
- * Requires Authorization: Bearer <CLEANUP_SECRET> header.
- * Set CLEANUP_SECRET in environment variables.
+ * Autenticación: Authorization: Bearer <CRON_SECRET>
+ * Vercel inyecta CRON_SECRET automáticamente en las Cron Jobs.
  */
-export async function POST(request: NextRequest) {
-  const secret = process.env.CLEANUP_SECRET;
+
+async function handler(request: NextRequest) {
+  const secret = process.env.CRON_SECRET;
   if (!secret) {
     return NextResponse.json(
-      { error: 'CLEANUP_SECRET no configurado' },
+      { error: 'CRON_SECRET no configurado' },
       { status: 500 }
     );
   }
@@ -48,4 +48,12 @@ export async function POST(request: NextRequest) {
     message: 'Limpieza completada',
     deleted_count: count ?? 0,
   });
+}
+
+export async function GET(request: NextRequest) {
+  return handler(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handler(request);
 }
