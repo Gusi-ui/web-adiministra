@@ -4,7 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/database';
-import type { NotificationType, WorkerNotification } from '@/types';
+import {
+  DEFAULT_NOTIFICATION_SOUND,
+  FALLBACK_NOTIFICATION_SOUND,
+  getNotificationSound,
+} from '@/lib/notification-sounds';
+import type { WorkerNotification } from '@/types';
 
 interface UseNotificationsOptions {
   limit?: number;
@@ -132,30 +137,34 @@ export function useNotifications(
   const markAllAsRead = useCallback(async () => {
     if (user?.id === null || user?.id === undefined) return;
 
+    // Obtener solo los IDs de las no leídas
+    const unreadIds = notifications
+      .filter(n => n.read_at === null)
+      .map(n => n.id);
+
+    if (unreadIds.length === 0) return;
+
     try {
       const response = await fetch(`/api/workers/${user.id}/notifications`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mark_all_read: true }),
+        body: JSON.stringify({ notification_ids: unreadIds }),
       });
 
       if (!response.ok) {
         throw new Error('Error al marcar todas las notificaciones como leídas');
       }
 
-      // Actualizar estado local
       setNotifications(prev =>
         prev.map(notif => ({ ...notif, read_at: new Date().toISOString() }))
       );
-
       setUnreadCount(0);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMessage);
-      // Error marking all notifications as read - silently handle
     }
-  }, [user?.id]);
+  }, [user?.id, notifications]);
 
   // Refrescar datos
   const refresh = useCallback(async () => {
@@ -164,51 +173,28 @@ export function useNotifications(
 
   // Reproducir sonido de notificación
   const playNotificationSound = useCallback(
-    (type: NotificationType) => {
+    (type: string) => {
       if (!enableSound) return;
 
-      // Mapear tipos de notificación a archivos de sonido disponibles
-      const soundFileMap: Record<NotificationType, string> = {
-        new_user: 'notification-user_added_new.wav',
-        user_removed: 'notification-user_removed_new.wav',
-        schedule_change: 'notification-schedule_changed_new.wav',
-        assignment_change: 'notification-assignment_changed_new.wav',
-        route_update: 'notification-route_update_new.wav',
-        system_message: 'notification-system_new.wav',
-        reminder: 'notification-reminder_new.wav',
-        urgent: 'notification-urgent_new.wav',
-        holiday_update: 'notification-holiday_update_new.wav',
-        service_start: 'notification-service_start_new.wav',
-        service_end: 'notification-service_end_new.wav',
-      };
-
-      const soundFile = soundFileMap[type] || 'notification-default_new.wav';
+      const soundFile = getNotificationSound(type);
 
       const playAudio = async (audioSrc: string) => {
-        try {
-          const audio = new Audio();
-          audio.volume = 0.8;
-          audio.src = audioSrc;
-
-          // Esperar a que el audio esté listo
-          await new Promise((resolve, reject) => {
-            audio.oncanplaythrough = resolve;
-            audio.onerror = () => reject(new Error('Audio load failed'));
-            audio.load();
-          });
-
-          // Intentar reproducir
-          await audio.play();
-        } catch {
-          // Silenciar errores de autoplay y otros problemas comunes
-          // El usuario verá las notificaciones visuales aunque no haya sonido
-        }
+        const audio = new Audio();
+        audio.volume = 0.8;
+        audio.src = audioSrc;
+        await new Promise((resolve, reject) => {
+          audio.oncanplaythrough = resolve;
+          audio.onerror = () => reject(new Error('Audio load failed'));
+          audio.load();
+        });
+        await audio.play();
       };
 
       void playAudio(`/sounds/${soundFile}`).catch(() => {
-        // Intentar con sonido por defecto si el principal falla
-        void playAudio('/sounds/notification-default.mp3').catch(() => {
-          // Silenciar completamente si no hay sonido disponible
+        void playAudio(`/sounds/${DEFAULT_NOTIFICATION_SOUND}`).catch(() => {
+          void playAudio(`/sounds/${FALLBACK_NOTIFICATION_SOUND}`).catch(
+            () => {}
+          );
         });
       });
     },

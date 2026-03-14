@@ -1,21 +1,35 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import type { NotificationPriority, NotificationType } from '@/types';
 import type { WorkerNotificationInsert } from '@/types/database-types';
 
-interface CreateNotificationRequest {
-  title?: string;
-  body?: string;
-  type?: NotificationType;
-  data?: Record<string, unknown>;
-  expires_at?: string;
-  priority?: NotificationPriority;
-}
+const NOTIFICATION_TYPES = [
+  'new_user',
+  'user_removed',
+  'schedule_change',
+  'assignment_change',
+  'route_update',
+  'service_start',
+  'service_end',
+  'system_message',
+  'reminder',
+  'urgent',
+  'holiday_update',
+] as const;
 
-interface UpdateNotificationsRequest {
-  notification_ids: string[];
-}
+const createNotificationSchema = z.object({
+  title: z.string().min(1, 'El título es requerido'),
+  body: z.string().min(1, 'El cuerpo es requerido'),
+  type: z.enum(NOTIFICATION_TYPES),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
+  expires_at: z.string().datetime().optional(),
+});
+
+const updateNotificationsSchema = z.object({
+  notification_ids: z.array(z.string().uuid()).min(1),
+});
 
 // GET /api/workers/[id]/notifications - Obtener notificaciones del trabajador
 export async function GET(
@@ -74,40 +88,33 @@ export async function POST(
 ) {
   try {
     const { id: workerId } = await params;
-    const body = (await request.json()) as CreateNotificationRequest;
-    const {
-      title,
-      body: notificationBody,
-      type,
-      data,
-      expires_at,
-      priority = 'normal',
-    } = body;
 
-    if (
-      typeof title !== 'string' ||
-      typeof notificationBody !== 'string' ||
-      typeof type !== 'string'
-    ) {
+    const parsed = createNotificationSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Faltan campos requeridos: title, body, type' },
+        { error: 'Datos inválidos', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
+    const {
+      title,
+      body,
+      type,
+      data,
+      expires_at,
+      priority = 'normal',
+    } = parsed.data;
+
     const notificationData: WorkerNotificationInsert = {
       worker_id: workerId,
-      notification_type: type,
-      message: notificationBody,
       title,
-      body: notificationBody,
+      body,
       type,
-      data: data ?? undefined,
+      data,
       expires_at: expires_at ?? null,
       priority,
     };
-
-    // Logs de debug removidos por seguridad
 
     const { data: notification, error } = await (
       supabaseAdmin as {
@@ -120,21 +127,11 @@ export async function POST(
       .single();
 
     if (error !== null) {
-      // eslint-disable-next-line no-console
-      console.error('Error al crear notificación:', error);
       return NextResponse.json(
-        {
-          error: 'Error al crear notificación',
-          details: error,
-        },
+        { error: 'Error al crear notificación' },
         { status: 500 }
       );
     }
-
-    // Notificación creada exitosamente (log removido por seguridad)
-
-    // Enviar notificación push en tiempo real aquí
-    // await sendPushNotification(notification);
 
     return NextResponse.json(
       { notification: notification as Record<string, unknown> },
@@ -155,28 +152,27 @@ export async function PATCH(
 ) {
   try {
     const { id: workerId } = await params;
-    const body = (await request.json()) as UpdateNotificationsRequest;
-    const { notification_ids: notificationIds } = body;
 
-    let query = (
+    const parsed = updateNotificationsSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Datos inválidos', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { notification_ids: notificationIds } = parsed.data;
+
+    const { data, error } = await (
       supabaseAdmin as {
         from: (t: string) => ReturnType<typeof supabaseAdmin.from>;
       }
     )
       .from('worker_notifications')
       .update({ read_at: new Date().toISOString() })
-      .eq('worker_id', workerId);
-
-    if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
-      return NextResponse.json(
-        { error: 'notification_ids es requerido y debe ser un array no vacío' },
-        { status: 400 }
-      );
-    }
-
-    query = query.in('id', notificationIds);
-
-    const { data, error } = await query.select();
+      .eq('worker_id', workerId)
+      .in('id', notificationIds)
+      .select();
 
     if (error) {
       return NextResponse.json(

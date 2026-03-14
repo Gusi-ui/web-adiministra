@@ -125,28 +125,23 @@ export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
 export interface WorkerNotification {
   id: string;
   worker_id: string;
-  notification_type: string;
   title: string;
-  message: string;
-  body?: string;
-  type?: NotificationType;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
-  is_read: boolean;
-  read_at?: string | null;
-  sent_at?: string;
+  body: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  read_at: string | null;
+  sent_at: string;
   created_at: string;
+  expires_at?: string | null;
   data?: Record<string, unknown>;
 }
 
 export interface WorkerNotificationInsert {
   worker_id: string;
-  notification_type: string;
   title: string;
-  message: string;
-  body?: string;
-  type?: NotificationType;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
-  is_read?: boolean;
+  body: string;
+  type: NotificationType;
+  priority?: NotificationPriority;
   data?: Record<string, unknown>;
   expires_at?: string | null;
 }

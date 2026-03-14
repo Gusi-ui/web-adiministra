@@ -1,26 +1,32 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
-import { supabase } from '@/lib/database';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
-interface NotificationSettingsRequest {
-  settings: {
-    push_enabled?: boolean;
-    sound_enabled?: boolean;
-    vibration_enabled?: boolean;
-    new_user_notifications?: boolean;
-    schedule_change_notifications?: boolean;
-    assignment_change_notifications?: boolean;
-    route_update_notifications?: boolean;
-    service_start_notifications?: boolean;
-    service_end_notifications?: boolean;
-    reminder_notifications?: boolean;
-    urgent_notifications?: boolean;
-    holiday_update_notifications?: boolean;
-    system_notifications?: boolean;
-    quiet_hours_start?: string | null;
-    quiet_hours_end?: string | null;
-  };
-}
+// Cast para tablas no incluidas en el tipo Database (worker_notification_settings)
+const db = supabaseAdmin as {
+  from: (t: string) => ReturnType<typeof supabaseAdmin.from>;
+};
+
+const settingsSchema = z.object({
+  settings: z.object({
+    push_enabled: z.boolean().optional(),
+    sound_enabled: z.boolean().optional(),
+    vibration_enabled: z.boolean().optional(),
+    new_user_notifications: z.boolean().optional(),
+    schedule_change_notifications: z.boolean().optional(),
+    assignment_change_notifications: z.boolean().optional(),
+    route_update_notifications: z.boolean().optional(),
+    service_start_notifications: z.boolean().optional(),
+    service_end_notifications: z.boolean().optional(),
+    reminder_notifications: z.boolean().optional(),
+    urgent_notifications: z.boolean().optional(),
+    holiday_update_notifications: z.boolean().optional(),
+    system_notifications: z.boolean().optional(),
+    quiet_hours_start: z.string().nullable().optional(),
+    quiet_hours_end: z.string().nullable().optional(),
+  }),
+});
 
 // GET - Obtener configuración de notificaciones del trabajador
 export async function GET(
@@ -38,7 +44,7 @@ export async function GET(
     }
 
     // Buscar configuración existente
-    const { data: settings, error: fetchError } = (await supabase
+    const { data: settings, error: fetchError } = (await db
       .from('worker_notification_settings')
       .select('*')
       .eq('worker_id', workerId)
@@ -94,25 +100,17 @@ export async function POST(
 ) {
   try {
     const { id: workerId } = await params;
-    const body = (await request.json()) as NotificationSettingsRequest;
-    const { settings } = body;
-
-    if (!workerId) {
+    const parsed = settingsSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'ID de trabajador requerido' },
+        { error: 'Datos inválidos', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
-
-    if (typeof settings !== 'object' || settings === null) {
-      return NextResponse.json(
-        { error: 'Configuración requerida' },
-        { status: 400 }
-      );
-    }
+    const { settings } = parsed.data;
 
     // Verificar que el trabajador existe
-    const { data: worker, error: workerError } = await supabase
+    const { data: worker, error: workerError } = await supabaseAdmin
       .from('workers')
       .select('id')
       .eq('id', workerId)
@@ -165,7 +163,7 @@ export async function POST(
     };
 
     // Intentar actualizar primero
-    const { data: updatedSettings, error: updateError } = (await supabase
+    const { data: updatedSettings, error: updateError } = (await db
       .from('worker_notification_settings')
       .update(settingsData)
       .eq('worker_id', workerId)
@@ -177,7 +175,7 @@ export async function POST(
 
     if (updateError && updateError.code === 'PGRST116') {
       // No existe, crear nuevo registro
-      const { data: newSettings, error: insertError } = (await supabase
+      const { data: newSettings, error: insertError } = (await db
         .from('worker_notification_settings')
         .insert({
           ...settingsData,
@@ -234,7 +232,7 @@ export async function DELETE(
     }
 
     // Eliminar configuración personalizada
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await db
       .from('worker_notification_settings')
       .delete()
       .eq('worker_id', workerId);

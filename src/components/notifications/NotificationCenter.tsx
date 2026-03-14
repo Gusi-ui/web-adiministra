@@ -6,6 +6,11 @@ import Link from 'next/link';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/database';
+import {
+  DEFAULT_NOTIFICATION_SOUND,
+  FALLBACK_NOTIFICATION_SOUND,
+  getNotificationSound,
+} from '@/lib/notification-sounds';
 import type { NotificationType, WorkerNotification } from '@/types';
 
 interface NotificationCenterProps {
@@ -24,53 +29,29 @@ export default function NotificationCenter({
 
   // Reproducir sonido de notificación
   const playNotificationSound = async (type: NotificationType) => {
-    // Mapear tipos de notificación a archivos de sonido disponibles
-    const soundFileMap: Record<NotificationType, string> = {
-      new_user: 'notification-user_added_new.wav',
-      user_removed: 'notification-user_removed_new.wav',
-      schedule_change: 'notification-schedule_changed_new.wav',
-      assignment_change: 'notification-assignment_changed_new.wav',
-      route_update: 'notification-route_update_new.wav',
-      service_start: 'notification-service_start_new.wav',
-      service_end: 'notification-service_end_new.wav',
-      system_message: 'notification-system_new.wav',
-      reminder: 'notification-reminder_new.wav',
-      urgent: 'notification-urgent_new.wav',
-      holiday_update: 'notification-holiday_update_new.wav',
-    };
-
-    const soundFile = soundFileMap[type] || 'notification-default_new.wav';
+    const soundFile = getNotificationSound(type);
 
     const playAudio = async (audioSrc: string) => {
-      try {
-        const audio = new Audio();
-        audio.volume = 0.8;
-        audio.src = audioSrc;
-
-        // Esperar a que el audio esté listo
-        await new Promise((resolve, reject) => {
-          audio.oncanplaythrough = resolve;
-          audio.onerror = () => reject(new Error('Audio load failed'));
-          audio.load();
-        });
-
-        // Intentar reproducir
-        await audio.play();
-      } catch {
-        // Silenciar errores de autoplay - son comunes en navegadores modernos
-        // Las notificaciones visuales seguirán funcionando
-      }
+      const audio = new Audio();
+      audio.volume = 0.8;
+      audio.src = audioSrc;
+      await new Promise((resolve, reject) => {
+        audio.oncanplaythrough = resolve;
+        audio.onerror = () => reject(new Error('Audio load failed'));
+        audio.load();
+      });
+      await audio.play();
     };
 
     try {
       await playAudio(`/sounds/${soundFile}`);
     } catch {
-      // Intentar con sonido por defecto si el principal falla
       try {
-        await playAudio('/sounds/notification-default.mp3');
+        await playAudio(`/sounds/${DEFAULT_NOTIFICATION_SOUND}`);
       } catch {
-        // Silenciar completamente si no hay sonido disponible
-        // Las notificaciones visuales seguirán funcionando
+        void playAudio(`/sounds/${FALLBACK_NOTIFICATION_SOUND}`).catch(
+          () => {}
+        );
       }
     }
   };

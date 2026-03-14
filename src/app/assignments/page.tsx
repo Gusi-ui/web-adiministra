@@ -132,8 +132,6 @@ async function sendNewAssignmentNotification(
     // Enviar notificación completa usando el servicio
     const notificationResult =
       await notificationService.createAndSendNotification(workerId, {
-        message: `Se te ha asignado un nuevo usuario: ${userName} con ${weeklyHours}h semanales`,
-        notification_type: 'new_user',
         title: '👤 Nueva asignación',
         body: `Se te ha asignado un nuevo usuario: ${userName} con ${weeklyHours}h semanales`,
         type: 'new_user' as NotificationType,
@@ -267,8 +265,6 @@ async function sendAssignmentChangeNotification(
     // Enviar notificación completa usando el servicio
     const notificationResult =
       await notificationService.createAndSendNotification(workerId, {
-        message: `Tus horas semanales han sido ${hoursChange} de ${oldHours}h a ${newHours}h (${changeAmount > 0 ? '+' : ''}${changeAmount}h)`,
-        notification_type: 'assignment_change',
         title: '📋 Asignación modificada',
         body: `Tus horas semanales han sido ${hoursChange} de ${oldHours}h a ${newHours}h (${changeAmount > 0 ? '+' : ''}${changeAmount}h)`,
         type: 'assignment_change' as NotificationType,

@@ -89,8 +89,6 @@ export default function TestNotificationsPage() {
       const tester = new NotificationTester();
 
       const notification: Omit<WorkerNotificationInsert, 'worker_id'> = {
-        message: `Notificación de prueba para tipo: ${type}`,
-        notification_type: type,
         type,
         title: `Prueba ${getTypeLabel(type)}`,
         body: `Notificación de prueba para tipo: ${type}`,

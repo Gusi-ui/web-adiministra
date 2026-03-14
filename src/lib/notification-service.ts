@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/database';
-import type { NotificationType, PushNotificationPayload } from '@/types';
+import type { NotificationType } from '@/types';
 import type {
   WorkerNotification,
   WorkerNotificationInsert,
@@ -26,15 +26,6 @@ export class NotificationService {
     notification: Omit<WorkerNotificationInsert, 'worker_id'>
   ): Promise<WorkerNotification | null> {
     try {
-      // eslint-disable-next-line no-console
-      console.log(
-        '🔔 Creando notificación para trabajador:',
-        workerId,
-        notification.title
-      );
-
-      // Crear notificación en la base de datos
-
       const { data: createdNotification, error } = await supabase
         .from('worker_notifications')
         .insert({
@@ -45,30 +36,24 @@ export class NotificationService {
         .single();
 
       if (error) {
-        // eslint-disable-next-line no-console
-        console.error('❌ Error creating notification:', error);
-        return null;
+        throw new Error(`Error creating notification: ${error.message}`);
       }
 
-      // eslint-disable-next-line no-console
-      console.log(
-        '✅ Notificación creada en BD:',
-        (createdNotification as { id: string }).id
-      );
-
-      // Enviar notificación push
-      await this.sendPushNotification(createdNotification);
-
-      // Enviar notificación en tiempo real via WebSocket
-      await this.sendRealtimeNotification(workerId, createdNotification);
-
-      // eslint-disable-next-line no-console
-      console.log('🚀 Notificación enviada completamente');
+      // Enviar notificación push y en tiempo real en paralelo
+      await Promise.allSettled([
+        this.sendPushNotification(createdNotification),
+        this.sendRealtimeNotification(workerId, createdNotification),
+      ]);
 
       return createdNotification;
     } catch (error) {
+      // Registrar el error sin bloquear el flujo del caller
+      const message = error instanceof Error ? error.message : String(error);
       // eslint-disable-next-line no-console
-      console.error('❌ Error in createAndSendNotification:', error);
+      console.error(
+        '[NotificationService] createAndSendNotification:',
+        message
+      );
       return null;
     }
   }
@@ -94,40 +79,13 @@ export class NotificationService {
         return;
       }
 
-      const payload: PushNotificationPayload = {
-        title: notification.title,
-        body: notification.body ?? notification.message,
-        icon: '/favicon.ico',
-        badge: 1,
-        sound: this.getNotificationSound(notification.type as NotificationType),
-        vibrate: this.getVibrationPattern(notification.priority as string),
-        data: {
-          notificationId: notification.id,
-          type: notification.type as NotificationType,
-          workerId: notification.worker_id,
-          ...(notification.data ?? {}),
-        },
-        actions: this.getNotificationActions(
-          notification.type as NotificationType
-        ),
-      };
-
-      // Aquí se integraría con un servicio de push notifications como Firebase FCM
-      // Por ahora, usaremos la Web Push API del navegador
-      for (const device of devices as {
-        push_token: string;
-        platform: string;
-      }[]) {
-        if (
-          typeof device.push_token === 'string' &&
-          device.push_token.length > 0
-        ) {
-          await this.sendWebPushNotification(device.push_token, payload);
-        }
-      }
+      // TODO (Fase 4): construir PushNotificationPayload y enviar a cada device
+      // usando VAPID keys o Firebase FCM.
+      // devices contiene los push_token válidos para notification.worker_id
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
       // eslint-disable-next-line no-console
-      console.error('Error sending push notification:', error);
+      console.error('[NotificationService] sendPushNotification:', msg);
     }
   }
 
@@ -182,49 +140,11 @@ export class NotificationService {
   }
 
   /**
-   * Enviar notificación Web Push
+   * Enviar notificación Web Push.
+   * TODO (Fase 4): implementar con VAPID keys / Firebase FCM.
    */
-  private async sendWebPushNotification(
-    pushToken: string,
-    payload: PushNotificationPayload
-  ): Promise<void> {
-    try {
-      // Aquí se implementaría la lógica para enviar la notificación
-      // usando una librería como web-push o un servicio como Firebase FCM
-      // eslint-disable-next-line no-console
-      console.log('Sending web push notification:', { pushToken, payload });
-
-      // Ejemplo de implementación con fetch (requiere configuración adicional)
-      // await fetch('/api/send-push', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ pushToken, payload }),
-      // });
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error sending web push notification:', error);
-    }
-  }
-
-  /**
-   * Obtener sonido de notificación según el tipo
-   */
-  private getNotificationSound(type: NotificationType): string {
-    const soundMap: Record<NotificationType, string> = {
-      new_user: 'notification-user_added_new.wav',
-      user_removed: 'notification-user_removed_new.wav',
-      schedule_change: 'notification-schedule_changed_new.wav',
-      assignment_change: 'notification-assignment_changed_new.wav',
-      route_update: 'notification-route_update_new.wav',
-      system_message: 'notification-system_new.wav',
-      reminder: 'notification-reminder_new.wav',
-      urgent: 'notification-urgent_new.wav',
-      holiday_update: 'notification-holiday_update_new.wav',
-      service_start: 'notification-service_start_new.wav',
-      service_end: 'notification-service_end_new.wav',
-    };
-
-    return soundMap[type] || 'notification-default_new.wav';
+  private async sendWebPushNotification(): Promise<void> {
+    // TODO (Fase 4): implementar con VAPID keys / Firebase FCM
   }
 
   /**
@@ -327,112 +247,72 @@ export class NotificationService {
   }
 
   /**
-   * Crear notificaciones automáticas para eventos del sistema
+   * Factorías de notificaciones para eventos del sistema.
+   * Cada función devuelve la notificación creada o null si falla.
    */
-  async createSystemNotifications() {
-    // Notificación de nuevo usuario asignado
-    const createNewUserNotification = async (
-      workerId: string,
-      userName: string,
-      userAddress: string
-    ) => {
-      void this.createAndSendNotification(workerId, {
-        message: `Se te ha asignado un nuevo usuario: ${userName} en ${userAddress}`,
-        notification_type: 'new_user',
-        title: '👤 Nuevo usuario asignado',
+  readonly systemNotifications = {
+    newUser: (workerId: string, userName: string, userAddress: string) =>
+      this.createAndSendNotification(workerId, {
+        title: 'Nuevo usuario asignado',
         body: `Se te ha asignado un nuevo usuario: ${userName} en ${userAddress}`,
         type: 'new_user',
         priority: 'high',
         data: { userName, userAddress },
-      });
-    };
+      }),
 
-    // Notificación de usuario eliminado
-    const createUserRemovedNotification = async (
-      workerId: string,
-      userName: string
-    ) => {
-      void this.createAndSendNotification(workerId, {
-        message: `El usuario ${userName} ha sido eliminado de tus asignaciones`,
-        notification_type: 'user_removed',
-        title: '❌ Usuario eliminado',
+    userRemoved: (workerId: string, userName: string) =>
+      this.createAndSendNotification(workerId, {
+        title: 'Usuario eliminado',
         body: `El usuario ${userName} ha sido eliminado de tus asignaciones`,
         type: 'user_removed',
         priority: 'normal',
         data: { userName },
-      });
-    };
+      }),
 
-    // Notificación de cambio de horario
-    const createScheduleChangeNotification = async (
+    scheduleChange: (
       workerId: string,
       userName: string,
       oldTime: string,
       newTime: string
-    ) => {
-      void this.createAndSendNotification(workerId, {
-        message: `Horario de ${userName} cambiado de ${oldTime} a ${newTime}`,
-        notification_type: 'schedule_change',
-        title: '⏰ Cambio de horario',
+    ) =>
+      this.createAndSendNotification(workerId, {
+        title: 'Cambio de horario',
         body: `Horario de ${userName} cambiado de ${oldTime} a ${newTime}`,
         type: 'schedule_change',
         priority: 'high',
         data: { userName, oldTime, newTime },
-      });
-    };
+      }),
 
-    // Notificación de inicio de servicio
-    const createServiceStartNotification = async (
+    serviceStart: (
       workerId: string,
       userName: string,
       serviceTime: string,
       serviceAddress: string
-    ) => {
-      void this.createAndSendNotification(workerId, {
-        message: `Servicio con ${userName} a las ${serviceTime} en ${serviceAddress} ha comenzado`,
-        notification_type: 'service_start',
-        title: '▶️ Servicio iniciado',
+    ) =>
+      this.createAndSendNotification(workerId, {
+        title: 'Servicio iniciado',
         body: `Servicio con ${userName} a las ${serviceTime} en ${serviceAddress} ha comenzado`,
         type: 'service_start',
         priority: 'high',
         data: { userName, serviceTime, serviceAddress },
-      });
-    };
+      }),
 
-    // Notificación de fin de servicio
-    const createServiceEndNotification = async (
+    serviceEnd: (
       workerId: string,
       userName: string,
       serviceTime: string,
       nextServiceInfo?: string
-    ) => {
-      void this.createAndSendNotification(workerId, {
-        message: `Servicio con ${userName} a las ${serviceTime} ha terminado${
-          nextServiceInfo != null && nextServiceInfo.length > 0
-            ? `. ${nextServiceInfo}`
-            : ''
-        }`,
-        notification_type: 'service_end',
-        title: '⏹️ Servicio finalizado',
+    ) =>
+      this.createAndSendNotification(workerId, {
+        title: 'Servicio finalizado',
         body: `Servicio con ${userName} a las ${serviceTime} ha terminado${
-          nextServiceInfo != null && nextServiceInfo.length > 0
-            ? `. ${nextServiceInfo}`
-            : ''
+          nextServiceInfo ? `. ${nextServiceInfo}` : ''
         }`,
         type: 'service_end',
         priority: 'normal',
         data: { userName, serviceTime, nextServiceInfo },
-      });
-    };
-
-    return {
-      createNewUserNotification,
-      createUserRemovedNotification,
-      createScheduleChangeNotification,
-      createServiceStartNotification,
-      createServiceEndNotification,
-    };
-  }
+      }),
+  };
 }
 
 // Exportar instancia singleton
