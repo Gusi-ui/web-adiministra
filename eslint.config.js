@@ -55,6 +55,10 @@ const eslintConfig = [
         Request: 'readonly',
         Response: 'readonly',
         RequestInit: 'readonly',
+        // Push API
+        PushSubscription: 'readonly',
+        PushManager: 'readonly',
+        ServiceWorkerRegistration: 'readonly',
       },
     },
     plugins: {
@@ -123,6 +127,9 @@ const eslintConfig = [
         Request: 'readonly',
         Response: 'readonly',
         RequestInit: 'readonly',
+        // Service Worker globals
+        self: 'readonly',
+        clients: 'readonly',
       },
     },
     plugins: {

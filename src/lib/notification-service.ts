@@ -59,29 +59,44 @@ export class NotificationService {
   }
 
   /**
-   * Enviar notificación push usando Service Worker
+   * Enviar Web Push a todas las suscripciones VAPID del trabajador.
+   * Delega en el endpoint /api/workers/[id]/push-notify para mantener
+   * la clave privada VAPID exclusivamente en el servidor.
    */
   private async sendPushNotification(
     notification: WorkerNotification
   ): Promise<void> {
     try {
-      // Obtener el token de push del dispositivo del trabajador
-      const { data: devices } = await supabase
-        .from('worker_devices')
-        .select('push_token, platform')
-        .eq('worker_id', notification.worker_id)
-        .eq('authorized', true)
-        .not('push_token', 'is', null);
+      const baseUrl =
+        typeof window !== 'undefined'
+          ? ''
+          : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001');
 
-      if (devices === null || devices.length === 0) {
+      const response = await fetch(
+        `${baseUrl}/api/workers/${notification.worker_id}/push-notify`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: notification.title,
+            body: notification.body,
+            type: notification.type,
+            priority: notification.priority,
+            notificationId: notification.id,
+            vibrate: this.getVibrationPattern(notification.priority),
+            actions: this.getNotificationActions(notification.type),
+            data: notification.data,
+          }),
+        }
+      );
+
+      if (!response.ok) {
         // eslint-disable-next-line no-console
-        console.log('No push tokens found for worker:', notification.worker_id);
-        return;
+        console.error(
+          '[NotificationService] sendPushNotification: API returned',
+          response.status
+        );
       }
-
-      // TODO (Fase 4): construir PushNotificationPayload y enviar a cada device
-      // usando VAPID keys o Firebase FCM.
-      // devices contiene los push_token válidos para notification.worker_id
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       // eslint-disable-next-line no-console
@@ -137,14 +152,6 @@ export class NotificationService {
       // eslint-disable-next-line no-console
       console.error('Error sending realtime notification:', error);
     }
-  }
-
-  /**
-   * Enviar notificación Web Push.
-   * TODO (Fase 4): implementar con VAPID keys / Firebase FCM.
-   */
-  private async sendWebPushNotification(): Promise<void> {
-    // TODO (Fase 4): implementar con VAPID keys / Firebase FCM
   }
 
   /**
