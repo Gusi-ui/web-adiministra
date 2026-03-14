@@ -94,6 +94,23 @@ export async function calculateRealTravelTime(
   toAddress: AddressInfo,
   travelMode: 'DRIVING' | 'WALKING' | 'TRANSIT' = 'DRIVING'
 ): Promise<RealTravelTimeResult> {
+  // Mismo domicilio: desplazamiento cero, sin necesidad de calcular nada
+  const normalizeAddr = (v: string): string =>
+    v
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/(\d+)\s*[°ºª]\s*/g, '$1 ')
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const fromNorm = normalizeAddr(buildFullAddress(fromAddress));
+  const toNorm = normalizeAddr(buildFullAddress(toAddress));
+  const fallbackNorm = normalizeAddr('Mataró, España');
+  if (fromNorm.length > 5 && fromNorm !== fallbackNorm && fromNorm === toNorm) {
+    return { duration: 0, distance: 0, success: true, isEstimated: false };
+  }
+
   // Si Google Maps Directions está deshabilitado, usar estimación local directamente
   if (!USE_GOOGLE_MAPS_DIRECTIONS) {
     return calculateLocalEstimate(fromAddress, toAddress, travelMode);

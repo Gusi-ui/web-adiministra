@@ -127,6 +127,21 @@ function estimateDistanceByCities(fromCity: string, toCity: string): number {
 }
 
 /**
+ * Normaliza una cadena de dirección para comparación:
+ * elimina acentos, ordinales (º ª °), puntuación y colapsa espacios.
+ */
+function normalizeForComparison(v: string | null | undefined): string {
+  return (v ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // quitar acentos/diacríticos
+    .replace(/(\d+)\s*[°ºª]\s*/g, '$1 ') // "1° 2ª" → "1 2 ", "1°2" → "1 2"
+    .replace(/[^a-z0-9\s]/g, '') // quitar puntuación
+    .replace(/\s+/g, ' ') // colapsar espacios múltiples
+    .trim();
+}
+
+/**
  * Estima tiempo de viaje entre dos direcciones
  */
 export function estimateTravelTime(
@@ -134,6 +149,26 @@ export function estimateTravelTime(
   toAddress: AddressInfo,
   travelMode: 'DRIVING' | 'WALKING' | 'TRANSIT' = 'DRIVING'
 ): TravelEstimate {
+  // Mismo domicilio: tiempo y distancia de desplazamiento cero
+  const fromKey = [
+    fromAddress.address,
+    fromAddress.postalCode,
+    fromAddress.city,
+  ]
+    .map(normalizeForComparison)
+    .join('|');
+  const toKey = [toAddress.address, toAddress.postalCode, toAddress.city]
+    .map(normalizeForComparison)
+    .join('|');
+  if (fromKey.replace(/\|/g, '').length > 3 && fromKey === toKey) {
+    return {
+      estimatedDuration: 0,
+      estimatedDistance: 0,
+      confidence: 'high',
+      method: 'postal_code',
+    };
+  }
+
   const speed = AVERAGE_SPEEDS[travelMode];
   const baseTime = BASE_TIME_MINUTES[travelMode];
 
