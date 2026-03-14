@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -27,6 +27,9 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
   const [subscription, setSubscription] = useState<PushSubscription | null>(
     null
   );
+  // Guardamos el registro para reutilizarlo en subscribe() sin depender
+  // de navigator.serviceWorker.ready, que puede colgarse indefinidamente.
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
   // Comprobar soporte y suscripción existente al montar
   useEffect(() => {
@@ -40,8 +43,9 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
 
     const check = async () => {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        const existing = await registration.pushManager.getSubscription();
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        registrationRef.current = reg;
+        const existing = await reg.pushManager.getSubscription();
         setSubscription(existing);
         setIsSubscribed(existing !== null);
       } catch {
@@ -65,7 +69,13 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
     setError(null);
 
     try {
-      const registration = await navigator.serviceWorker.ready;
+      // Usar el registro guardado; si por algún motivo no está, registrar de nuevo.
+      // register() es idempotente: devuelve el registro existente si ya está activo.
+      const registration =
+        registrationRef.current ??
+        (await navigator.serviceWorker.register('/sw.js'));
+      registrationRef.current = registration;
+
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey)
         .buffer as ArrayBuffer;
 
