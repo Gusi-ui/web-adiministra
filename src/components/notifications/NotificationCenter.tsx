@@ -28,7 +28,7 @@ export default function NotificationCenter({
   const [showOnlyUnread, setShowOnlyUnread] = useState(true);
 
   // Reproducir sonido de notificación
-  const playNotificationSound = async (type: NotificationType) => {
+  const playNotificationSound = useCallback(async (type: NotificationType) => {
     const soundFile = getNotificationSound(type);
 
     const playAudio = async (audioSrc: string) => {
@@ -54,7 +54,7 @@ export default function NotificationCenter({
         );
       }
     }
-  };
+  }, []);
 
   // Mostrar notificación del navegador con mejor presentación
   const showBrowserNotification = useCallback(
@@ -217,31 +217,56 @@ export default function NotificationCenter({
     }
   };
 
-  // Configurar suscripción en tiempo real
+  // Configurar suscripción en tiempo real con reconexión exponencial
   useEffect(() => {
     if (user?.id == null) return;
 
-    const channel = supabase
-      .channel(`worker-${user.id}`)
-      .on('broadcast', { event: 'notification' }, payload => {
-        const newNotification = payload['payload'] as WorkerNotification;
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
+    let retryDelay = 1000;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let currentChannel: ReturnType<typeof supabase.channel> | null = null;
+    let unmounted = false;
 
-        // Reproducir sonido de notificación
-        if (newNotification.type) {
-          void playNotificationSound(newNotification.type);
-        }
+    const connect = () => {
+      if (unmounted) return;
 
-        // Mostrar notificación del navegador si está permitido
-        showBrowserNotification(newNotification);
-      })
-      .subscribe();
+      currentChannel = supabase
+        .channel(`worker-${user.id}`)
+        .on('broadcast', { event: 'notification' }, payload => {
+          retryDelay = 1000;
+          const newNotification = payload['payload'] as WorkerNotification;
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          if (newNotification.type) {
+            void playNotificationSound(newNotification.type);
+          }
+          showBrowserNotification(newNotification);
+        })
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') {
+            retryDelay = 1000;
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            if (currentChannel !== null) {
+              void supabase.removeChannel(currentChannel);
+              currentChannel = null;
+            }
+            if (!unmounted) {
+              retryTimer = setTimeout(() => {
+                retryDelay = Math.min(retryDelay * 2, 30_000);
+                connect();
+              }, retryDelay);
+            }
+          }
+        });
+    };
+
+    connect();
 
     return () => {
-      void supabase.removeChannel(channel);
+      unmounted = true;
+      if (retryTimer !== null) clearTimeout(retryTimer);
+      if (currentChannel !== null) void supabase.removeChannel(currentChannel);
     };
-  }, [user?.id, showBrowserNotification]);
+  }, [user?.id, showBrowserNotification, playNotificationSound]);
 
   // Cargar datos iniciales
   useEffect(() => {

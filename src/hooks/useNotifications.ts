@@ -136,19 +136,13 @@ export function useNotifications(
   // Marcar todas como leídas
   const markAllAsRead = useCallback(async () => {
     if (user?.id === null || user?.id === undefined) return;
-
-    // Obtener solo los IDs de las no leídas
-    const unreadIds = notifications
-      .filter(n => n.read_at === null)
-      .map(n => n.id);
-
-    if (unreadIds.length === 0) return;
+    if (unreadCount === 0) return;
 
     try {
       const response = await fetch(`/api/workers/${user.id}/notifications`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notification_ids: unreadIds }),
+        body: JSON.stringify({ mark_all_read: true }),
       });
 
       if (!response.ok) {
@@ -164,7 +158,7 @@ export function useNotifications(
         err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMessage);
     }
-  }, [user?.id, notifications]);
+  }, [user?.id, unreadCount]);
 
   // Refrescar datos
   const refresh = useCallback(async () => {
@@ -252,49 +246,56 @@ export function useNotifications(
     return Notification.permission === 'granted';
   }, [enableBrowserNotifications]);
 
-  // Configurar suscripción en tiempo real
+  // Configurar suscripción en tiempo real con reconexión exponencial
   useEffect(() => {
     if (user?.id === null || user?.id === undefined || autoRefresh === false) {
       return;
     }
 
-    // eslint-disable-next-line no-console
-    console.log(
-      '🔌 Configurando suscripción en tiempo real para trabajador:',
-      user.id
-    );
+    let retryDelay = 1000;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let currentChannel: ReturnType<typeof supabase.channel> | null = null;
+    let unmounted = false;
 
-    const channel = supabase
-      .channel(`worker-${user.id}`)
-      .on('broadcast', { event: 'notification' }, payload => {
-        // eslint-disable-next-line no-console
-        console.log(
-          '📨 Notificación en tiempo real recibida:',
-          payload['payload']
-        );
-        const newNotification = payload['payload'] as WorkerNotification;
+    const connect = () => {
+      if (unmounted) return;
 
-        // Agregar nueva notificación al estado
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
+      currentChannel = supabase
+        .channel(`worker-${user.id}`)
+        .on('broadcast', { event: 'notification' }, payload => {
+          retryDelay = 1000; // Restablecer demora tras mensaje exitoso
+          const newNotification = payload['payload'] as WorkerNotification;
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          if (newNotification.type) {
+            playNotificationSound(newNotification.type);
+          }
+          showBrowserNotification(newNotification);
+        })
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') {
+            retryDelay = 1000;
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            if (currentChannel !== null) {
+              void supabase.removeChannel(currentChannel);
+              currentChannel = null;
+            }
+            if (!unmounted) {
+              retryTimer = setTimeout(() => {
+                retryDelay = Math.min(retryDelay * 2, 30_000);
+                connect();
+              }, retryDelay);
+            }
+          }
+        });
+    };
 
-        // Reproducir sonido
-        if (newNotification.type) {
-          playNotificationSound(newNotification.type);
-        }
-
-        // Mostrar notificación del navegador
-        showBrowserNotification(newNotification);
-
-        // eslint-disable-next-line no-console
-        console.log('✅ Notificación procesada en cliente');
-      })
-      .subscribe();
+    connect();
 
     return () => {
-      // eslint-disable-next-line no-console
-      console.log('🔌 Limpiando suscripción en tiempo real');
-      void supabase.removeChannel(channel);
+      unmounted = true;
+      if (retryTimer !== null) clearTimeout(retryTimer);
+      if (currentChannel !== null) void supabase.removeChannel(currentChannel);
     };
   }, [user?.id, autoRefresh, playNotificationSound, showBrowserNotification]);
 

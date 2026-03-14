@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { rateLimit } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { WorkerNotificationInsert } from '@/types/database-types';
 
@@ -27,9 +28,10 @@ const createNotificationSchema = z.object({
   expires_at: z.string().datetime().optional(),
 });
 
-const updateNotificationsSchema = z.object({
-  notification_ids: z.array(z.string().uuid()).min(1),
-});
+const updateNotificationsSchema = z.union([
+  z.object({ notification_ids: z.array(z.string().uuid()).min(1) }),
+  z.object({ mark_all_read: z.literal(true) }),
+]);
 
 // GET /api/workers/[id]/notifications - Obtener notificaciones del trabajador
 export async function GET(
@@ -88,6 +90,13 @@ export async function POST(
 ) {
   try {
     const { id: workerId } = await params;
+
+    if (!rateLimit(`post-notification:${workerId}`, 20, 60_000)) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Inténtalo de nuevo en un minuto.' },
+        { status: 429 }
+      );
+    }
 
     const parsed = createNotificationSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -161,18 +170,22 @@ export async function PATCH(
       );
     }
 
-    const { notification_ids: notificationIds } = parsed.data;
+    const db = supabaseAdmin as {
+      from: (t: string) => ReturnType<typeof supabaseAdmin.from>;
+    };
 
-    const { data, error } = await (
-      supabaseAdmin as {
-        from: (t: string) => ReturnType<typeof supabaseAdmin.from>;
-      }
-    )
+    const readAt = new Date().toISOString();
+    let baseQuery = db
       .from('worker_notifications')
-      .update({ read_at: new Date().toISOString() })
+      .update({ read_at: readAt })
       .eq('worker_id', workerId)
-      .in('id', notificationIds)
-      .select();
+      .is('read_at', null);
+
+    if ('notification_ids' in parsed.data) {
+      baseQuery = baseQuery.in('id', parsed.data.notification_ids);
+    }
+
+    const { data, error } = await baseQuery.select();
 
     if (error) {
       return NextResponse.json(
