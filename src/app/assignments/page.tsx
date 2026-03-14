@@ -562,6 +562,12 @@ export default function AssignmentsPage() {
           assignmentToDelete.user_id
         );
 
+        // Notificar al trabajador que el usuario ha sido eliminado de sus asignaciones
+        void notificationService.systemNotifications.userRemoved(
+          assignmentToDelete.worker_id,
+          userName
+        );
+
         // Cerrar modal y limpiar estado
         setShowDeleteModal(false);
         setAssignmentToDelete(null);

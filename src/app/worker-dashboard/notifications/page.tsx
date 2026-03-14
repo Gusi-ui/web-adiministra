@@ -7,6 +7,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  DEFAULT_NOTIFICATION_SOUND,
+  getNotificationSound,
+} from '@/lib/notification-sounds';
 import type { NotificationType } from '@/types';
 
 const NOTIFICATION_TYPES: {
@@ -64,7 +68,8 @@ export default function NotificationsSettingsPage() {
     vibration_enabled: true,
     new_user_notifications: true,
     schedule_change_notifications: true,
-    assignment_notifications: true,
+    assignment_change_notifications: true,
+    route_update_notifications: true,
     service_start_notifications: true,
     service_end_notifications: true,
     system_notifications: true,
@@ -88,9 +93,9 @@ export default function NotificationsSettingsPage() {
       case 'schedule_change':
         return settings.schedule_change_notifications;
       case 'assignment_change':
-        return settings.assignment_notifications;
+        return settings.assignment_change_notifications;
       case 'route_update':
-        return settings.assignment_notifications; // Usar la misma configuración que assignment_change
+        return settings.route_update_notifications;
       case 'service_start':
         return settings.service_start_notifications;
       case 'service_end':
@@ -124,8 +129,13 @@ export default function NotificationsSettingsPage() {
         }));
         break;
       case 'assignment_change':
+        setSettings(prev => ({
+          ...prev,
+          assignment_change_notifications: enabled,
+        }));
+        break;
       case 'route_update':
-        setSettings(prev => ({ ...prev, assignment_notifications: enabled }));
+        setSettings(prev => ({ ...prev, route_update_notifications: enabled }));
         break;
       case 'service_start':
         setSettings(prev => ({
@@ -165,7 +175,8 @@ export default function NotificationsSettingsPage() {
               vibration_enabled?: boolean;
               new_user_notifications?: boolean;
               schedule_change_notifications?: boolean;
-              assignment_notifications?: boolean;
+              assignment_change_notifications?: boolean;
+              route_update_notifications?: boolean;
               service_start_notifications?: boolean;
               service_end_notifications?: boolean;
               system_notifications?: boolean;
@@ -225,29 +236,13 @@ export default function NotificationsSettingsPage() {
   // Probar sonido de notificación
   const testNotificationSound = (type: NotificationType) => {
     try {
-      const soundFileMap: Record<NotificationType, string> = {
-        new_user: 'notification-user_added_new.wav',
-        user_removed: 'notification-user_removed_new.wav',
-        schedule_change: 'notification-schedule_changed_new.wav',
-        assignment_change: 'notification-assignment_changed_new.wav',
-        route_update: 'notification-route_update_new.wav',
-        service_start: 'notification-service_start_new.wav',
-        service_end: 'notification-service_end_new.wav',
-        system_message: 'notification-system_new.wav',
-        reminder: 'notification-reminder_new.wav',
-        urgent: 'notification-urgent_new.wav',
-        holiday_update: 'notification-holiday_update_new.wav',
-      };
-
-      const soundFile = soundFileMap[type] || 'notification-default_new.wav';
+      const soundFile = getNotificationSound(type);
       const audio = new Audio(`/sounds/${soundFile}`);
       audio.volume = 0.8;
       void audio.play().catch(() => {
-        const defaultAudio = new Audio('/sounds/notification-default_new.wav');
-        defaultAudio.volume = 0.8;
-        void defaultAudio.play().catch(() => {
-          // Silently fail if audio cannot be played
-        });
+        const fallback = new Audio(`/sounds/${DEFAULT_NOTIFICATION_SOUND}`);
+        fallback.volume = 0.8;
+        void fallback.play().catch(() => {});
       });
     } catch {
       // Error playing test sound

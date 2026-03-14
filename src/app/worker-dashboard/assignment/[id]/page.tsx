@@ -9,6 +9,7 @@ import { Button } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/database';
 import { isHoliday } from '@/lib/holidays-query';
+import { notificationService } from '@/lib/notification-service';
 
 interface UserDetail {
   id: string;
@@ -47,6 +48,9 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
   const currentUser = user;
   const [row, setRow] = useState<AssignmentDetailRow | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [workerId, setWorkerId] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState<boolean>(false);
+  const [isStarted, setIsStarted] = useState<boolean>(false);
   const [isCompleting, setIsCompleting] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
 
@@ -75,6 +79,7 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
           .ilike('email', email)
           .maybeSingle();
         if (werr !== null || w === null) return;
+        setWorkerId(w.id);
 
         const { data, error } = await supabase
           .from('assignments')
@@ -150,6 +155,37 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
     };
 
     checkCompletionStatus();
+  }, [row?.id, currentUser?.id]);
+
+  // Verificar si el servicio ya fue iniciado hoy
+  useEffect(() => {
+    const checkStartStatus = async (): Promise<void> => {
+      if (row?.id == null || currentUser?.id == null) return;
+
+      try {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const { data: startedRows } = await supabase
+          .from('system_activities')
+          .select('id')
+          .eq('activity_type', 'service_started')
+          .eq('entity_type', 'assignment')
+          .eq('entity_id', row.id)
+          .eq('user_id', currentUser.id)
+          .gte('created_at', startOfDay.toISOString())
+          .lte('created_at', endOfDay.toISOString())
+          .limit(1);
+
+        setIsStarted((startedRows?.length ?? 0) > 0);
+      } catch {
+        // Error checking start status
+      }
+    };
+
+    void checkStartStatus();
   }, [row?.id, currentUser?.id]);
 
   const dayKey = useMemo(() => {
@@ -287,6 +323,71 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
     return null;
   };
 
+  // Función para marcar el servicio como iniciado
+  const handleStartService = async (): Promise<void> => {
+    if (
+      row?.id == null ||
+      currentUser?.id == null ||
+      workerId == null ||
+      isStarting
+    )
+      return;
+
+    setIsStarting(true);
+    try {
+      const slot = getDisplaySlot();
+      const userName =
+        `${row.users?.name ?? ''} ${row.users?.surname ?? ''}`.trim();
+
+      const { error: activityError } = await supabase
+        .from('system_activities')
+        .insert({
+          user_id: currentUser.id,
+          user_email: currentUser.email,
+          user_name: currentUser.name,
+          activity_type: 'service_started',
+          entity_type: 'assignment',
+          entity_id: row.id,
+          entity_name: userName ?? 'Servicio',
+          description: `Servicio iniciado por ${currentUser.name ?? currentUser.email}`,
+          details: {
+            assignment_type: row.assignment_type,
+            user_name: userName,
+            user_code: row.users?.client_code,
+            started_at: new Date().toISOString(),
+            slot,
+          },
+        });
+
+      if (activityError !== null) {
+        throw new Error(
+          `Error registrando actividad: ${activityError.message}`
+        );
+      }
+
+      setIsStarted(true);
+
+      // Notificar al trabajador (confirmación de inicio de servicio)
+      void notificationService.createAndSendNotification(workerId, {
+        title: 'Servicio iniciado',
+        body: `Has iniciado el servicio con ${userName}${slot !== null ? ` a las ${slot.start}` : ''}`,
+        type: 'service_start',
+        priority: 'normal',
+        data: { userName, assignmentId: row.id, slot },
+      });
+
+      // eslint-disable-next-line no-alert
+      alert('▶️ Servicio marcado como iniciado');
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error iniciando servicio:', error);
+      // eslint-disable-next-line no-alert
+      alert('❌ Error al iniciar el servicio. Inténtalo de nuevo.');
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   // Función para marcar el servicio como completado
   const handleCompleteService = async (): Promise<void> => {
     if (
@@ -330,10 +431,22 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
         );
       }
 
-      // Marcar como completado localmente
       setIsCompleted(true);
 
-      // Mostrar mensaje de éxito
+      // Notificar al trabajador (confirmación de fin de servicio)
+      if (workerId !== null) {
+        const slot = getDisplaySlot();
+        const userName =
+          `${row.users?.name ?? ''} ${row.users?.surname ?? ''}`.trim();
+        void notificationService.createAndSendNotification(workerId, {
+          title: 'Servicio completado',
+          body: `Has completado el servicio con ${userName}${slot !== null ? ` a las ${slot.end}` : ''}`,
+          type: 'service_end',
+          priority: 'normal',
+          data: { userName, assignmentId: row.id, slot },
+        });
+      }
+
       // eslint-disable-next-line no-alert
       alert('✅ Servicio marcado como completado exitosamente');
 
@@ -893,6 +1006,59 @@ export default function WorkerAssignmentDetail(): React.JSX.Element {
                   </svg>
                   Volver al Dashboard
                 </Button>
+
+                {/* Botón Iniciar Servicio */}
+                {isStarted ? (
+                  <Button
+                    disabled
+                    className='flex-1 sm:flex-none bg-blue-600 text-white cursor-not-allowed'
+                  >
+                    <svg
+                      className='w-4 h-4 mr-2'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z'
+                      />
+                    </svg>
+                    Servicio Iniciado
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => void handleStartService()}
+                    disabled={isStarting || isCompleted}
+                    className='flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700'
+                  >
+                    {isStarting ? (
+                      <>
+                        <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+                        Iniciando...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className='w-4 h-4 mr-2'
+                          fill='none'
+                          stroke='currentColor'
+                          viewBox='0 0 24 24'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z'
+                          />
+                        </svg>
+                        Iniciar Servicio
+                      </>
+                    )}
+                  </Button>
+                )}
 
                 {isCompleted ? (
                   <Button

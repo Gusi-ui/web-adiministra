@@ -15,6 +15,8 @@ import {
   logUserManagementActivity,
   logUserUpdateActivity,
 } from '@/lib/activities-query';
+import { supabase } from '@/lib/database';
+import { notificationService } from '@/lib/notification-service';
 import {
   createUser,
   deleteUser,
@@ -404,6 +406,16 @@ export default function UsersPage() {
     setError(null);
 
     try {
+      // Obtener trabajadores afectados ANTES de eliminar (la FK se borrará)
+      const { data: affectedAssignments } = await supabase
+        .from('assignments')
+        .select('worker_id')
+        .eq('user_id', userToDelete.id);
+
+      const uniqueWorkerIds = [
+        ...new Set(affectedAssignments?.map(a => a.worker_id as string) ?? []),
+      ];
+
       await deleteUser(userToDelete.id);
       setUsers(users.filter(u => u.id !== userToDelete.id));
       setSuccessMessage('Usuario eliminado exitosamente');
@@ -418,6 +430,13 @@ export default function UsersPage() {
           `${userToDelete.name} ${userToDelete.surname}`,
           userToDelete.id
         );
+      }
+
+      // Notificar a cada trabajador que el usuario ha sido eliminado
+      const userName =
+        `${userToDelete.name} ${userToDelete.surname ?? ''}`.trim();
+      for (const wid of uniqueWorkerIds) {
+        void notificationService.systemNotifications.userRemoved(wid, userName);
       }
 
       setUserToDelete(null);
