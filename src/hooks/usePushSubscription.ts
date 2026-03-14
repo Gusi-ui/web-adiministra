@@ -60,8 +60,14 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
     if (user?.id == null || !isSupported) return;
 
     const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidPublicKey) {
-      setError('Notificaciones push no configuradas en el servidor');
+    if (
+      !vapidPublicKey ||
+      vapidPublicKey === 'undefined' ||
+      vapidPublicKey.length < 80
+    ) {
+      setError(
+        'Notificaciones push pendientes de configuración en el servidor'
+      );
       return;
     }
 
